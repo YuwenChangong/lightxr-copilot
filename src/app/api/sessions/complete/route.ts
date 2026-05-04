@@ -14,13 +14,37 @@ export async function POST(req: Request) {
     }
 
     // 1. Get all captures for this session
+    console.log("Completing session:", sessionId);
+
     const { data: captures, error: capturesError } = await supabaseServer
       .from("captures")
-      .select("question, answer, image_url, created_at, task_name, step_index")
+      .select("question, answer, image_url, created_at, task_name, step_index, session_id")
       .eq("session_id", sessionId)
       .order("created_at", { ascending: true });
 
-    if (capturesError) {
+    console.log("Query result - captures:", captures?.length, "error:", capturesError);
+    if (captures && captures.length > 0) {
+      console.log("First capture session_id:", captures[0].session_id);
+    }
+
+    // Fallback: if no captures found by session_id, try recent captures within last hour
+    let effectiveCaptures = captures;
+    if ((!captures || captures.length === 0) && !capturesError) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { data: recentCaptures } = await supabaseServer
+        .from("captures")
+        .select("question, answer, image_url, created_at, task_name, step_index, session_id")
+        .is("session_id", null)
+        .gte("created_at", oneHourAgo)
+        .order("created_at", { ascending: true });
+      
+      if (recentCaptures && recentCaptures.length > 0) {
+        console.log("Found recent captures without session_id:", recentCaptures.length);
+        effectiveCaptures = recentCaptures;
+      }
+    }
+
+    if (capturesError && !effectiveCaptures?.length) {
       console.error("Fetch captures error:", capturesError);
       return NextResponse.json(
         { error: "Failed to fetch captures" },
@@ -28,12 +52,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const totalQuestions = captures?.length || 0;
+    const totalQuestions = effectiveCaptures?.length || 0;
 
     // 2. Generate report using MiMo V2 Flash
-    let report = "No captures found for this session.";
+    let report = "No captures found for this session. No AI report generated.";
 
-    if (captures && captures.length > 0) {
+    if (effectiveCaptures && effectiveCaptures.length > 0) {
       const apiKey = process.env.AI_API_KEY;
       const apiBaseUrl = process.env.AI_API_BASE_URL || "https://api.openai.com/v1";
 
@@ -42,7 +66,7 @@ export async function POST(req: Request) {
           const urlObj = new URL(apiBaseUrl);
           const apiUrl = `${urlObj.origin}/v1/chat/completions`;
 
-          const conversationSummary = captures
+          const conversationSummary = effectiveCaptures
             .map(
               (c, i) =>
                 `[第${i + 1}次提问] ${c.task_name ? `任务: ${c.task_name}` : ""}${c.step_index !== null ? `, 步骤: ${c.step_index + 1}` : ""}
@@ -58,7 +82,7 @@ export async function POST(req: Request) {
               Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-              model: "MiMo-V2-Flash",
+              model: process.env.AI_MODEL || "gpt-4o",
               messages: [
                 {
                   role: "user",
