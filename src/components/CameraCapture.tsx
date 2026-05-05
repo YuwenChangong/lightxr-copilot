@@ -167,24 +167,29 @@ export default function CameraCapture({ onCapture }: CameraCaptureProps) {
   // Show file upload UI when camera is not supported
   if (!cameraSupported) {
     return (
-      <div className="relative bg-zinc-900 flex flex-col items-center justify-center p-4 gap-3 min-h-[140px]">
-        {error && <p className="text-amber-400 text-xs max-w-sm text-center">{error}</p>}
+      <div className="relative bg-white flex flex-col items-center justify-center p-5 gap-3 min-h-[160px] rounded-2xl mx-3 mt-3" style={{ boxShadow: "0 0 0 1px var(--separator)" }}>
+        {error && (
+          <div className="bg-[#ff9500]/10 rounded-xl px-3 py-2 mb-1">
+            <p className="text-[#ff9500] text-xs text-center leading-relaxed">{error}</p>
+          </div>
+        )}
 
         {capturedPreview ? (
           <div className="flex items-center gap-3 w-full">
             <img
               src={capturedPreview}
               alt="Captured"
-              className="w-20 h-20 rounded-lg object-cover border border-zinc-700"
+              className="w-[72px] h-[72px] rounded-xl object-cover"
+              style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
             />
             <div className="flex flex-col gap-2">
-              <span className="text-xs text-green-400">✓ Image ready</span>
+              <span className="text-xs text-[#34c759] font-medium">✓ Image ready</span>
               <button
                 onClick={() => {
                   setCapturedPreview(null);
                   if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
-                className="px-3 py-1.5 bg-zinc-700 text-white text-xs rounded-lg hover:bg-zinc-600 transition-colors"
+                className="px-4 py-1.5 bg-[#f2f2f7] text-[#007aff] text-xs font-medium rounded-lg active:bg-[#e5e5ea] transition-colors"
               >
                 Re-upload
               </button>
@@ -193,8 +198,12 @@ export default function CameraCapture({ onCapture }: CameraCaptureProps) {
         ) : (
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="px-5 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-500 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#007aff] text-white text-[15px] font-medium rounded-full active:scale-[0.97] transition-transform"
           >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
             Upload Photo
           </button>
         )}
@@ -211,10 +220,11 @@ export default function CameraCapture({ onCapture }: CameraCaptureProps) {
   }
 
   return (
-    <div className="relative bg-black h-[240px] shrink-0">
+    <div className="relative bg-black overflow-hidden mx-3 mt-3 rounded-2xl" style={{ aspectRatio: "4/3", maxHeight: 280 }}>
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
-          <p className="text-zinc-500 text-sm">Starting camera...</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10 gap-2">
+          <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <p className="text-white/50 text-xs">Starting camera...</p>
         </div>
       )}
 
@@ -236,11 +246,12 @@ export default function CameraCapture({ onCapture }: CameraCaptureProps) {
           <img
             src={capturedPreview}
             alt="Captured"
-            className="w-16 h-16 rounded-md object-cover border-2 border-green-400"
+            className="w-14 h-14 rounded-xl object-cover ring-2 ring-white/80"
+            style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
           />
           <button
             onClick={handleRetake}
-            className="px-3 py-1.5 bg-zinc-800/80 backdrop-blur text-white text-xs rounded-lg hover:bg-zinc-700 transition-colors border border-zinc-600"
+            className="px-3.5 py-2 bg-black/50 backdrop-blur-md text-white text-xs font-medium rounded-full border border-white/20 active:bg-black/70 transition-colors"
           >
             Retake
           </button>
@@ -250,10 +261,15 @@ export default function CameraCapture({ onCapture }: CameraCaptureProps) {
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
           <button
             onClick={handleCapture}
-            className="w-14 h-14 rounded-full bg-white/20 border-4 border-white backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
+            className="w-[68px] h-[68px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform"
             aria-label="Capture"
+            style={{
+              background: "transparent",
+              border: "4px solid white",
+              boxShadow: "0 0 0 1px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.2)",
+            }}
           >
-            <div className="w-10 h-10 rounded-full bg-white" />
+            <div className="w-[54px] h-[54px] rounded-full bg-white" style={{ boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.05)" }} />
           </button>
         </div>
       )}

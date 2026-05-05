@@ -114,19 +114,19 @@ export default function TaskPanel({
   const currentStep = currentTask?.steps[currentStepIndex];
 
   return (
-    <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3">
+    <div className="bg-white rounded-2xl mx-3 mt-3 px-4 py-3" style={{ boxShadow: "0 0 0 1px var(--separator), 0 1px 3px rgba(0,0,0,0.04)" }}>
       {/* Task selector */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-xs text-zinc-500 shrink-0">Task:</span>
-            <select
+          <span className="text-xs text-[#8e8e93] shrink-0 font-medium">Task</span>
+          <select
             value={currentTask?.id || ""}
             onChange={(e) => {
               const task = allTasks.find((t) => t.id === e.target.value);
               onTaskChange(task || null);
               onStepChange(0);
             }}
-            className="flex-1 min-w-0 bg-zinc-800 text-white text-sm px-2 py-1 rounded border border-zinc-700 focus:outline-none focus:border-blue-500"
+            className="flex-1 min-w-0 bg-[#f2f2f7] text-[#1c1c1e] text-sm px-2.5 py-1.5 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#007aff]/30"
           >
             <option value="">-- Free Ask --</option>
             {customTasks.length > 0 && (
@@ -145,13 +145,13 @@ export default function TaskPanel({
             <button
               onClick={handleDuplicate}
               disabled={!accessToken || duplicating}
-              className="text-[11px] text-zinc-500 hover:text-blue-300 transition-colors disabled:opacity-50"
+              className="text-[11px] text-[#007aff] active:text-[#0066d6] font-medium disabled:opacity-40 transition-colors"
             >
-              {duplicating ? "Duplicating..." : "Copy to Custom"}
+              {duplicating ? "Copying..." : "Copy"}
             </button>
             <button
               onClick={() => setExpanded(!expanded)}
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="text-[11px] text-[#8e8e93] active:text-[#636366] font-medium transition-colors"
             >
               {expanded ? "Hide" : "Details"}
             </button>
@@ -166,13 +166,13 @@ export default function TaskPanel({
             <button
               onClick={() => onStepChange(Math.max(0, currentStepIndex - 1))}
               disabled={currentStepIndex === 0}
-              className="px-2 py-1 text-xs bg-zinc-800 text-zinc-300 rounded border border-zinc-700 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 text-xs bg-[#f2f2f7] text-[#007aff] font-medium rounded-lg active:bg-[#e5e5ea] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               ← Prev
             </button>
 
-            <span className="text-xs text-purple-400 font-medium">
-              Step {currentStepIndex + 1} / {currentTask.steps.length}
+            <span className="text-xs text-[#8e8e93] font-semibold">
+              {currentStepIndex + 1} / {currentTask.steps.length}
             </span>
 
             <button
@@ -182,23 +182,23 @@ export default function TaskPanel({
                 )
               }
               disabled={currentStepIndex === currentTask.steps.length - 1}
-              className="px-2 py-1 text-xs bg-zinc-800 text-zinc-300 rounded border border-zinc-700 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 text-xs bg-[#f2f2f7] text-[#007aff] font-medium rounded-lg active:bg-[#e5e5ea] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               Next →
             </button>
           </div>
 
-          <div className="bg-zinc-800/50 rounded-lg p-3">
-            <p className="text-sm font-medium text-white">
+          <div className="bg-[#f2f2f7] rounded-xl p-3">
+            <p className="text-[15px] font-semibold text-[#1c1c1e]">
               {currentStep.title}
             </p>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-xs text-[#636366] mt-1 leading-relaxed">
               {currentStep.instruction}
             </p>
 
             {expanded && (
-              <p className="text-xs text-zinc-500 mt-2 border-t border-zinc-700 pt-2">
-                <span className="text-zinc-400">Success criteria: </span>
+              <p className="text-xs text-[#8e8e93] mt-2 border-t border-[var(--separator)] pt-2 leading-relaxed">
+                <span className="text-[#636366] font-medium">Success criteria: </span>
                 {currentStep.successCriteria}
               </p>
             )}

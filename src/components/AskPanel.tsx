@@ -107,9 +107,9 @@ export default function AskPanel({
   }
 
   return (
-    <div className="bg-zinc-900 border-t border-zinc-800 px-4 py-3">
+    <div className="bg-white border-t border-[var(--separator)] px-4 py-3 rounded-b-2xl mx-3" style={{ boxShadow: "0 0 0 1px var(--separator), 0 2px 8px rgba(0,0,0,0.04)" }}>
       {/* Question input */}
-        <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center">
         <input
           type="text"
           value={question}
@@ -117,7 +117,8 @@ export default function AskPanel({
           onKeyDown={(e) => e.key === "Enter" && handleAsk()}
           placeholder={captureResult ? "问一下关于拍摄画面的问题..." : "输入问题，或先拍照再提问"}
           disabled={loading}
-          className="flex-1 bg-zinc-800 text-white text-sm px-3 py-2 rounded-lg border border-zinc-700 placeholder:text-zinc-500 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+          className="flex-1 bg-[#f2f2f7] text-[#1c1c1e] text-[15px] px-3.5 py-2.5 rounded-xl border-0 placeholder:text-[#aeaeb2] focus:outline-none focus:ring-2 focus:ring-[#007aff]/30 disabled:opacity-40"
+          style={{ fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}
         />
         <VoiceInputButton
           onResult={handleVoiceResult}
@@ -127,7 +128,7 @@ export default function AskPanel({
         <button
           onClick={handleAsk}
           disabled={loading || (!question.trim() && !captureResult)}
-          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2.5 bg-[#007aff] text-white text-[15px] font-semibold rounded-xl active:bg-[#0066d6] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "..." : "Ask"}
         </button>
@@ -135,13 +136,13 @@ export default function AskPanel({
 
       {/* Error */}
       {error && (
-        <p className="text-red-400 text-xs mt-2">{error}</p>
+        <p className="text-[#ff3b30] text-xs mt-2 font-medium">{error}</p>
       )}
 
       {/* Save Status */}
       {saveStatus && (
-        <p className={`text-xs mt-2 ${saveStatus === "saved" ? "text-green-400" : "text-yellow-400"}`}>
-          {saveStatus === "saved" ? "✓ 记录已保存" : "⚠ AI 回答成功但记录未保存到数据库"}
+        <p className={`text-xs mt-2 font-medium ${saveStatus === "saved" ? "text-[#34c759]" : "text-[#ff9500]"}`}>
+          {saveStatus === "saved" ? "✓ 记录已保存" : "⚠ 记录未保存到数据库"}
         </p>
       )}
 
@@ -149,10 +150,10 @@ export default function AskPanel({
       {answer && (
         <div className="mt-3">
           <div className="flex items-center gap-2 mb-1">
-            <p className="text-xs text-zinc-500 font-medium">AI Response</p>
+            <p className="text-xs text-[#8e8e93] font-medium">AI Response</p>
             <TextToSpeechButton text={answer} lang="zh-CN" />
           </div>
-          <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">
+          <p className="text-sm text-[#3a3a3c] leading-relaxed whitespace-pre-wrap">
             {answer}
           </p>
         </div>

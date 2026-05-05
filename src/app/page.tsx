@@ -89,30 +89,21 @@ export default function Home() {
   }, [sessionId, sessionLoading, accessToken]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-950 text-white">
+    <div className="flex flex-col min-h-screen bg-[#f2f2f7] text-[#1c1c1e]">
       <Header />
       <CameraCapture onCapture={handleCapture} />
 
       {/* Task Builder entry */}
-      <div className="px-4 pt-2">
+      <div className="px-4 pt-3">
         <Link
           href="/tasks"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            background: "#111827",
-            border: "1px solid #1e293b",
-            borderRadius: 12,
-            padding: "10px",
-            color: "#3b82f6",
-            fontSize: 13,
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
+          className="flex items-center justify-center gap-2 bg-white rounded-xl py-3 text-[15px] font-semibold text-[#007aff] no-underline active:bg-[#f2f2f7] transition-colors"
+          style={{ boxShadow: "0 0 0 1px var(--separator), 0 1px 3px rgba(0,0,0,0.04)" }}
         >
-          🛠 Task Builder — Create Custom Workflows
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+          Task Builder — Create Custom Workflows
         </Link>
       </div>
 
@@ -131,26 +122,28 @@ export default function Home() {
           <button
             onClick={handleStartSession}
             disabled={sessionLoading}
-            className="w-full px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-4 py-2.5 bg-[#34c759] text-white text-[15px] font-semibold rounded-xl active:bg-[#30b350] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            style={{ boxShadow: "0 1px 3px rgba(52,199,89,0.3)" }}
           >
             {sessionLoading ? "创建中..." : "▶ 开始训练"}
           </button>
         ) : sessionId ? (
           <div className="flex items-center gap-2">
-            <div className="flex-1 bg-green-900/30 border border-green-700 rounded-lg px-3 py-2 text-sm text-green-300">
-              训练进行中... 会话ID: {sessionId.slice(0, 8)}
+            <div className="flex-1 bg-[#34c759]/10 border border-[#34c759]/20 rounded-xl px-3 py-2.5 text-sm text-[#34c759] font-medium">
+              训练进行中... {sessionId.slice(0, 8)}
             </div>
             <button
               onClick={handleCompleteSession}
               disabled={sessionLoading}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+              className="px-4 py-2.5 bg-[#ff3b30] text-white text-sm font-semibold rounded-xl active:bg-[#e0342b] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+              style={{ boxShadow: "0 1px 3px rgba(255,59,48,0.3)" }}
             >
-              {sessionLoading ? "生成报告中..." : "⏹ 结束训练"}
+              {sessionLoading ? "生成中..." : "⏹ 结束"}
             </button>
           </div>
         ) : null}
         {sessionError && (
-          <p className="text-red-400 text-xs mt-1">{sessionError}</p>
+          <p className="text-[#ff3b30] text-xs mt-1.5 font-medium">{sessionError}</p>
         )}
       </div>
 
@@ -166,31 +159,29 @@ export default function Home() {
 
       {/* Training report */}
       {sessionReport && (
-        <div className="mx-4 mb-3 p-4 bg-zinc-900 border border-zinc-700 rounded-lg">
+        <div className="mx-4 mb-3 p-4 bg-white rounded-2xl" style={{ boxShadow: "0 0 0 1px var(--separator), 0 1px 3px rgba(0,0,0,0.04)" }}>
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-zinc-200">训练报告</h3>
+            <h3 className="text-[15px] font-semibold text-[#1c1c1e]">训练报告</h3>
             <button
               onClick={() => setSessionReport(null)}
-              className="text-zinc-500 hover:text-zinc-300 text-xs"
+              className="text-[#8e8e93] active:text-[#636366] text-xs font-medium"
             >
               关闭
             </button>
           </div>
-          <div className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
+          <div className="text-sm text-[#3a3a3c] leading-relaxed whitespace-pre-wrap">
             {sessionReport}
           </div>
         </div>
       )}
 
-      <div className="px-4 py-3 flex-1">
+      <div className="px-4 py-2 flex-1">
         <CaptureHistory refreshKey={refreshKey} accessToken={accessToken} />
       </div>
 
       {/* Privacy notice */}
-      <p className="px-4 pb-3 text-[11px] text-zinc-600 leading-relaxed">
-        图片只会在你点击 Ask 后上传。请不要上传身份证、银行卡、私人聊天、他人隐私画面等敏感内容。
-        <br />
-        Images are uploaded only when you press Ask. Do not upload sensitive personal information.
+      <p className="px-4 pb-4 text-[11px] text-[#aeaeb2] leading-relaxed text-center">
+        图片只会在你点击 Ask 后上传。请勿上传敏感内容。
       </p>
     </div>
   );
