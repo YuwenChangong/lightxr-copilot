@@ -113,7 +113,7 @@ ${conversationSummary}
 - 给出具体可操作的建议`,
                 },
               ],
-              max_tokens: 500,
+              max_tokens: 1500,
               temperature: 0.3,
             }),
           });

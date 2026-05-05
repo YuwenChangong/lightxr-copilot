@@ -80,7 +80,7 @@ export default function Home() {
   }, [sessionId, sessionLoading]);
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-950 text-white">
+    <div className="flex flex-col min-h-screen bg-zinc-950 text-white">
       <Header />
       <CameraCapture onCapture={handleCapture} />
 
@@ -148,7 +148,7 @@ export default function Home() {
         </div>
       )}
 
-      <div className="px-4 py-3 overflow-y-auto">
+      <div className="px-4 py-3 flex-1">
         <CaptureHistory refreshKey={refreshKey} />
       </div>
 

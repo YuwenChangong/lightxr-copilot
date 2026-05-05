@@ -25,13 +25,16 @@ export default function AskPanel({
   const [answer, setAnswer] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "failed" | null>(null);
 
   const handleVoiceResult = useCallback((text: string) => {
     setQuestion(text);
   }, []);
 
   async function handleAsk() {
-    if (!captureResult || !question.trim()) return;
+    // Allow asking with just a photo (no text needed) - use default question
+    const effectiveQuestion = question.trim() || (captureResult ? "请描述这个画面，识别图中的物体，并告诉我下一步该做什么" : "");
+    if (!effectiveQuestion) return;
 
     setLoading(true);
     setError(null);
@@ -39,11 +42,14 @@ export default function AskPanel({
 
     try {
       const formData = new FormData();
-      const imageFile = new File([captureResult.blob], "capture.jpg", {
-        type: "image/jpeg",
-      });
-      formData.append("image", imageFile);
-      formData.append("question", question.trim());
+      if (captureResult) {
+        const blob = captureResult instanceof FileList ? captureResult[Math.max(0, captureResult.length - 1)] : captureResult.blob;
+        const imageFile = new File([blob], "capture.jpg", {
+          type: "image/jpeg",
+        });
+        formData.append("image", imageFile);
+      }
+      formData.append("question", effectiveQuestion);
 
       // Attach task context if active
       if (currentTask) {
@@ -73,6 +79,17 @@ export default function AskPanel({
       }
 
       setAnswer(data.answer);
+      // Show save status
+      if (data.capture) {
+        setSaveStatus("saved");
+      } else {
+        setSaveStatus("failed");
+        console.warn("Capture not saved:", data);
+      }
+      // Show AI error in development
+      if (data.debug?.aiError) {
+        console.error("AI Error:", data.debug.aiError);
+      }
       onAnswered?.();
     } catch {
       setError("Network error. Please try again.");
@@ -101,7 +118,7 @@ export default function AskPanel({
         />
         <button
           onClick={handleAsk}
-          disabled={!captureResult || loading || !question.trim()}
+          disabled={loading || (!question.trim() && !captureResult)}
           className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "..." : "Ask"}
@@ -111,6 +128,13 @@ export default function AskPanel({
       {/* Error */}
       {error && (
         <p className="text-red-400 text-xs mt-2">{error}</p>
+      )}
+
+      {/* Save Status */}
+      {saveStatus && (
+        <p className={`text-xs mt-2 ${saveStatus === "saved" ? "text-green-400" : "text-yellow-400"}`}>
+          {saveStatus === "saved" ? "✓ 记录已保存" : "⚠ AI 回答成功但记录未保存到数据库"}
+        </p>
       )}
 
       {/* AI Answer */}
