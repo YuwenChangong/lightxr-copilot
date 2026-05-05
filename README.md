@@ -1,25 +1,25 @@
-# Gaze
+# Gaze Prototype
 
-A first-person AI task assistant prototype for lightweight XR glasses.
+Gaze Prototype is the early web prototype, AI backend, and companion interface for **Gaze OS**.
 
-## What It Is
+**Gaze OS** is an Android XR-based smart glasses operating system built around eye tracking, voice commands, side-button confirmation, and AI agents.
 
-Gaze explores a lightweight glasses-first interaction model. It uses a phone camera as first-person view input and provides visual understanding, voice interaction, task guidance, persistent memory, and AI-generated training reports.
+## What This Prototype Validates
 
-## Why It Matters
+- First-person AI visual question answering
+- Voice input and text-to-speech output
+- Private per-user capture history
+- Session-based interaction logs
+- Web-based companion controls
+- Early workflow and report generation
 
-Current XR headsets are heavy and expensive. Gaze demonstrates that a software-only prototype — running on a phone browser — can deliver meaningful first-person AI assistance for industrial training, assembly tasks, and guided procedures.
+## Gaze Prototype Roles
 
-## Features
-
-- **Camera Capture / Image Upload** — Snap a photo or upload an image of what you're looking at
-- **Voice Input** — Speak your question naturally
-- **AI Visual Understanding** — Multi-modal AI analyzes your view and answers questions
-- **Text-to-Speech Response** — AI answers read aloud for hands-free use
-- **Task Mode** — Step-by-step guidance with task templates (Battery Assembly, PC Assembly, Lab Safety)
-- **Persistent Memory** — All captures saved to Supabase with per-user isolation
-- **Training Sessions** — Start / complete training with tracked question count
-- **AI Training Reports** — MiMo V2 Flash generates concise training summaries
+| Role | Description |
+|------|-------------|
+| **Gaze AI Backend** | `/api/analyze`, image upload, AI Q&A, voice APIs, history, user isolation — future Android Launcher & Gaze OS will call these |
+| **Gaze Companion** | Account, history, privacy settings, model config, device binding, shortcut commands, data deletion, logs |
+| **Gaze Studio** | Advanced workflow builder — create shortcuts, workflows, configure agent behavior, edit demo scenes, debug prompts |
 
 ## Tech Stack
 
@@ -52,8 +52,8 @@ Start Training → Select Task → Capture Image → Ask Question (voice/text)
 
 1. Clone the repo:
    ```bash
-    git clone https://github.com/YOUR_USERNAME/gaze-prototype.git
-    cd gaze-prototype
+   git clone https://github.com/YOUR_USERNAME/gaze-prototype.git
+   cd gaze-prototype
    ```
 
 2. Install dependencies:
@@ -98,6 +98,36 @@ Start Training → Select Task → Capture Image → Ask Question (voice/text)
 3. Add the same environment variables in Vercel project settings
 4. Deploy — HTTPS enables camera access on mobile
 
+## Development Roadmap
+
+See [docs/gaze-os-roadmap.md](docs/gaze-os-roadmap.md) for the full roadmap.
+
+### Current Stage: Gaze Prototype
+
+- ✅ AI visual Q&A
+- ✅ Voice input / TTS output
+- ✅ Supabase storage + user isolation
+- ✅ Session tracking
+- ✅ Gaze Studio (workflow builder)
+- ✅ Vercel deployment
+
+### Next Stage: Gaze OS Web Prototype
+
+- `/glass` — Glasses mode: hold to talk, auto-capture, auto-answer
+- `/glass-os` — Gaze OS simulator: Launcher + Gaze + Voice + Agent Action
+- Gaze Launcher web preview
+- Demo apps (Chat, Reader, Video, Music)
+- Voice command system
+- Agent Action System
+
+### Future: Android Launcher
+
+- Kotlin + Jetpack Compose
+- Gaze Launcher native version
+- Voice commands + TTS
+- Demo apps native
+- Agent Action native
+
 ## Security Notes
 
 - Anonymous authentication ensures each device gets a unique user ID — data is isolated per user
@@ -106,7 +136,6 @@ Start Training → Select Task → Capture Image → Ask Question (voice/text)
 - `SUPABASE_SERVICE_ROLE_KEY` is server-side only, never exposed to the browser
 - All API routes require a valid JWT token (anonymous or authenticated)
 - For production, switch Supabase Storage to private buckets with signed URLs
-- The migration SQL (`supabase-migration-user-id.sql`) adds `user_id` columns to existing tables. Run it once in the SQL Editor.
 
 ## License
 
