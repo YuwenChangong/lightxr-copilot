@@ -74,6 +74,43 @@ export default function TaskPanel({
   // Merge: default templates first, then custom tasks
   const allTasks: TaskTemplate[] = [...taskTemplates, ...customTasks];
 
+  const [duplicating, setDuplicating] = useState(false);
+
+  const handleDuplicate = async () => {
+    if (!accessToken || !currentTask) return;
+    try {
+      setDuplicating(true);
+      const payload = {
+        name: `${currentTask.name} (Custom)`,
+        description: currentTask.description || null,
+        steps: currentTask.steps.map((s, idx) => ({
+          title: s.title,
+          instruction: s.instruction,
+          successCriteria: s.successCriteria,
+        })),
+      };
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const converted = dbTaskToTemplate(data.task);
+        setCustomTasks((prev) => [converted, ...prev]);
+        onTaskChange(converted);
+        onStepChange(0);
+      }
+    } catch (e) {
+      console.error("Duplicate task failed:", e);
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
   const currentStep = currentTask?.steps[currentStepIndex];
 
   return (
@@ -118,12 +155,21 @@ export default function TaskPanel({
           </select>
         </div>
         {currentTask && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="ml-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-          >
-            {expanded ? "Hide" : "Details"}
-          </button>
+          <div className="ml-2 flex items-center gap-2">
+            <button
+              onClick={handleDuplicate}
+              disabled={!accessToken || duplicating}
+              className="text-[11px] text-zinc-500 hover:text-blue-300 transition-colors disabled:opacity-50"
+            >
+              {duplicating ? "Duplicating..." : "Copy to Custom"}
+            </button>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              {expanded ? "Hide" : "Details"}
+            </button>
+          </div>
         )}
       </div>
 
