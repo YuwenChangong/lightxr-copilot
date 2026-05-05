@@ -8,8 +8,10 @@ import AskPanel from "@/components/AskPanel";
 import TaskPanel from "@/components/TaskPanel";
 import { CaptureHistory } from "@/components/CaptureHistory";
 import type { TaskTemplate } from "@/lib/task-templates";
+import { useAnonymousUser } from "@/hooks/useAnonymousUser";
 
 export default function Home() {
+  const { accessToken, loading: authLoading } = useAnonymousUser();
   const [captureResult, setCaptureResult] = useState<CaptureResult | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -37,7 +39,10 @@ export default function Home() {
       const taskName = currentTask?.name || "自由训练";
       const res = await fetch("/api/sessions/start", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({ taskName }),
       });
       const data = await res.json();
@@ -51,7 +56,7 @@ export default function Home() {
     } finally {
       setSessionLoading(false);
     }
-  }, [currentTask, sessionLoading]);
+  }, [currentTask, sessionLoading, accessToken]);
 
   const handleCompleteSession = useCallback(async () => {
     if (!sessionId || sessionLoading) return;
@@ -61,7 +66,10 @@ export default function Home() {
     try {
       const res = await fetch("/api/sessions/complete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({ sessionId }),
       });
       const data = await res.json();
@@ -77,7 +85,7 @@ export default function Home() {
     } finally {
       setSessionLoading(false);
     }
-  }, [sessionId, sessionLoading]);
+  }, [sessionId, sessionLoading, accessToken]);
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950 text-white">
@@ -128,6 +136,7 @@ export default function Home() {
         currentTask={currentTask}
         currentStepIndex={currentStepIndex}
         sessionId={sessionId}
+        accessToken={accessToken}
       />
 
       {/* Training report */}
@@ -149,7 +158,7 @@ export default function Home() {
       )}
 
       <div className="px-4 py-3 flex-1">
-        <CaptureHistory refreshKey={refreshKey} />
+        <CaptureHistory refreshKey={refreshKey} accessToken={accessToken} />
       </div>
 
       {/* Privacy notice */}

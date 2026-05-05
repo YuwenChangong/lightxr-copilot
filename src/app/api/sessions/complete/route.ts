@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { getAuthUserFromRequest } from "@/lib/get-auth-user";
 
 export async function POST(req: Request) {
   try {
+    const user = await getAuthUserFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { sessionId } = body;
 
@@ -13,38 +19,36 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Get all captures for this session
-    console.log("Completing session:", sessionId);
+    // Verify that this session belongs to the current user
+    const { data: existingSession, error: sessionCheckError } =
+      await supabaseServer
+        .from("training_sessions")
+        .select("user_id")
+        .eq("id", sessionId)
+        .single();
 
+    if (sessionCheckError || !existingSession) {
+      return NextResponse.json(
+        { error: "Session not found" },
+        { status: 404 }
+      );
+    }
+
+    if (existingSession.user_id !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // 1. Get all captures for this session (only this user's)
     const { data: captures, error: capturesError } = await supabaseServer
       .from("captures")
-      .select("question, answer, image_url, created_at, task_name, step_index, session_id")
+      .select(
+        "question, answer, image_url, created_at, task_name, step_index, session_id"
+      )
       .eq("session_id", sessionId)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
-    console.log("Query result - captures:", captures?.length, "error:", capturesError);
-    if (captures && captures.length > 0) {
-      console.log("First capture session_id:", captures[0].session_id);
-    }
-
-    // Fallback: if no captures found by session_id, try recent captures within last hour
-    let effectiveCaptures = captures;
-    if ((!captures || captures.length === 0) && !capturesError) {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      const { data: recentCaptures } = await supabaseServer
-        .from("captures")
-        .select("question, answer, image_url, created_at, task_name, step_index, session_id")
-        .is("session_id", null)
-        .gte("created_at", oneHourAgo)
-        .order("created_at", { ascending: true });
-      
-      if (recentCaptures && recentCaptures.length > 0) {
-        console.log("Found recent captures without session_id:", recentCaptures.length);
-        effectiveCaptures = recentCaptures;
-      }
-    }
-
-    if (capturesError && !effectiveCaptures?.length) {
+    if (capturesError) {
       console.error("Fetch captures error:", capturesError);
       return NextResponse.json(
         { error: "Failed to fetch captures" },
@@ -52,26 +56,27 @@ export async function POST(req: Request) {
       );
     }
 
-    const totalQuestions = effectiveCaptures?.length || 0;
+    const totalQuestions = captures?.length || 0;
 
-    // 2. Generate report using MiMo V2 Flash
+    // 2. Generate report using AI
     let report = "No captures found for this session. No AI report generated.";
 
-    if (effectiveCaptures && effectiveCaptures.length > 0) {
+    if (captures && captures.length > 0) {
       const apiKey = process.env.AI_API_KEY;
-      const apiBaseUrl = process.env.AI_API_BASE_URL || "https://api.openai.com/v1";
+      const apiBaseUrl =
+        process.env.AI_API_BASE_URL || "https://api.openai.com/v1";
 
       if (apiKey) {
         try {
           const urlObj = new URL(apiBaseUrl);
           const apiUrl = `${urlObj.origin}/v1/chat/completions`;
 
-          const conversationSummary = effectiveCaptures
+          const conversationSummary = captures
             .map(
               (c, i) =>
-                `[第${i + 1}次提问] ${c.task_name ? `任务: ${c.task_name}` : ""}${c.step_index !== null ? `, 步骤: ${c.step_index + 1}` : ""}
-问题: ${c.question}
-回答: ${c.answer}`
+                `[第${i + 1}次提问] ${c.task_name ? `任务: ${c.task_name}` : ""}${
+                  c.step_index !== null ? `, 步骤: ${c.step_index + 1}` : ""
+                }\n问题: ${c.question}\n回答: ${c.answer}`
             )
             .join("\n\n");
 
@@ -123,7 +128,11 @@ ${conversationSummary}
             report = aiData.choices?.[0]?.message?.content || report;
           } else {
             const errorText = await aiResponse.text();
-            console.error("AI report generation error:", aiResponse.status, errorText);
+            console.error(
+              "AI report generation error:",
+              aiResponse.status,
+              errorText
+            );
           }
         } catch (error) {
           console.error("AI report request failed:", error);
@@ -141,6 +150,7 @@ ${conversationSummary}
         total_questions: totalQuestions,
       })
       .eq("id", sessionId)
+      .eq("user_id", user.id)
       .select()
       .single();
 

@@ -13,15 +13,25 @@ type Capture = {
   step_title: string | null;
 };
 
-export function CaptureHistory({ refreshKey }: { refreshKey: number }) {
+interface CaptureHistoryProps {
+  refreshKey: number;
+  accessToken?: string | null;
+}
+
+export function CaptureHistory({ refreshKey, accessToken = null }: CaptureHistoryProps) {
   const [captures, setCaptures] = useState<Capture[]>([]);
   const [loading, setLoading] = useState(false);
 
-  async function loadCaptures() {
+  async function loadCaptures(token?: string | null) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/captures");
+      const headers: HeadersInit = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch("/api/captures", { headers });
       const data = await res.json();
 
       if (!res.ok) {
@@ -37,8 +47,8 @@ export function CaptureHistory({ refreshKey }: { refreshKey: number }) {
   }
 
   useEffect(() => {
-    loadCaptures();
-  }, [refreshKey]);
+    loadCaptures(accessToken);
+  }, [refreshKey, accessToken]);
 
   return (
     <section className="w-full">

@@ -9,7 +9,8 @@ create table if not exists training_sessions (
   task_name text not null,
   status text not null default 'active',
   report text,
-  total_questions int default 0
+  total_questions int default 0,
+  user_id uuid not null
 );
 
 alter table training_sessions enable row level security;
@@ -36,7 +37,8 @@ create table if not exists captures (
   task_name text,
   step_index int,
   step_title text,
-  session_id uuid references training_sessions(id)
+  session_id uuid references training_sessions(id),
+  user_id uuid not null
 );
 
 -- Allow anonymous insert and select (Phase 1: no auth)

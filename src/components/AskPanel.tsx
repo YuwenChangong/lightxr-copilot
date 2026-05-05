@@ -12,6 +12,7 @@ interface AskPanelProps {
   currentTask?: TaskTemplate | null;
   currentStepIndex?: number;
   sessionId?: string | null;
+  accessToken?: string | null;
 }
 
 export default function AskPanel({
@@ -20,6 +21,7 @@ export default function AskPanel({
   currentTask,
   currentStepIndex = 0,
   sessionId = null,
+  accessToken = null,
 }: AskPanelProps) {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
@@ -66,8 +68,14 @@ export default function AskPanel({
         formData.append("sessionId", sessionId);
       }
 
+      const headers: HeadersInit = {};
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+
       const res = await fetch("/api/analyze", {
         method: "POST",
+        headers,
         body: formData,
       });
 

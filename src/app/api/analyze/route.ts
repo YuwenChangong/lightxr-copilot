@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { getAuthUserFromRequest } from "@/lib/get-auth-user";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
+    // Authenticate user
+    const user = await getAuthUserFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const image = formData.get("image") as File | null;
     const question = formData.get("question") as string | null;
@@ -149,7 +156,7 @@ ${image ? "1. 识别图中的物体、工具、零件、设备\n2. 判断用户�
       try {
         const fileExt = image!.type.split("/")[1] || "jpg";
         const fileName = `${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
-        const filePath = `captures/${fileName}`;
+        const filePath = `${user.id}/${fileName}`;
 
         const { error: uploadError } = await supabaseServer.storage
           .from("captures")
@@ -176,7 +183,7 @@ ${image ? "1. 识别图中的物体、工具、零件、设备\n2. 判断用户�
     try {
         const { data, error: insertError } = await supabaseServer
           .from("captures")
-          .insert({
+           .insert({
             image_url: imageUrl,
             question,
             answer,
@@ -184,6 +191,7 @@ ${image ? "1. 识别图中的物体、工具、零件、设备\n2. 判断用户�
             step_index: stepIndex ? Number(stepIndex) : null,
             step_title: stepTitle || null,
             session_id: sessionId || null,
+            user_id: user.id,
           })
         .select()
         .single();

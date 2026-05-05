@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { getAuthUserFromRequest } from "@/lib/get-auth-user";
 
 export async function POST(req: Request) {
   try {
+    const user = await getAuthUserFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { taskName } = body;
 
@@ -18,6 +24,7 @@ export async function POST(req: Request) {
       .insert({
         task_name: taskName,
         status: "active",
+        user_id: user.id,
       })
       .select()
       .single();

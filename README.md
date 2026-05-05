@@ -17,7 +17,7 @@ Current XR headsets are heavy and expensive. LightXR Copilot demonstrates that a
 - **AI Visual Understanding** — Multi-modal AI analyzes your view and answers questions
 - **Text-to-Speech Response** — AI answers read aloud for hands-free use
 - **Task Mode** — Step-by-step guidance with task templates (Battery Assembly, PC Assembly, Lab Safety)
-- **Persistent Memory** — All captures saved to Supabase with full history
+- **Persistent Memory** — All captures saved to Supabase with per-user isolation
 - **Training Sessions** — Start / complete training with tracked question count
 - **AI Training Reports** — MiMo V2 Flash generates concise training summaries
 
@@ -79,8 +79,10 @@ Start Training → Select Task → Capture Image → Ask Question (voice/text)
 
 5. Set up the database:
    - Go to Supabase Dashboard → SQL Editor
-   - Run the contents of `supabase-schema.sql`
+   - Run the contents of `supabase-schema.sql` (for fresh installs)
+   - If upgrading from a previous version, run `supabase-migration-user-id.sql` instead
    - Create a Storage bucket named `captures` (set to Public for MVP)
+   - **Important**: Enable Anonymous Sign-In in Supabase Dashboard → Authentication → Settings
 
 6. Run the dev server:
    ```bash
@@ -98,10 +100,13 @@ Start Training → Select Task → Capture Image → Ask Question (voice/text)
 
 ## Security Notes
 
+- Anonymous authentication ensures each device gets a unique user ID — data is isolated per user
 - Images are uploaded **only** when the user presses "Ask"
 - Image size limited to 3MB; only JPEG/PNG/WebP accepted
 - `SUPABASE_SERVICE_ROLE_KEY` is server-side only, never exposed to the browser
+- All API routes require a valid JWT token (anonymous or authenticated)
 - For production, switch Supabase Storage to private buckets with signed URLs
+- The migration SQL (`supabase-migration-user-id.sql`) adds `user_id` columns to existing tables. Run it once in the SQL Editor.
 
 ## License
 
