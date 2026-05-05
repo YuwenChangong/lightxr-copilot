@@ -9,6 +9,7 @@ import TaskPanel from "@/components/TaskPanel";
 import { CaptureHistory } from "@/components/CaptureHistory";
 import type { TaskTemplate } from "@/lib/task-templates";
 import { useAnonymousUser } from "@/hooks/useAnonymousUser";
+import Link from "next/link";
 
 export default function Home() {
   const { accessToken, loading: authLoading } = useAnonymousUser();
@@ -91,6 +92,29 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-zinc-950 text-white">
       <Header />
       <CameraCapture onCapture={handleCapture} />
+
+      {/* Task Builder entry */}
+      <div className="px-4 pt-2">
+        <Link
+          href="/tasks"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            background: "#111827",
+            border: "1px solid #1e293b",
+            borderRadius: 12,
+            padding: "10px",
+            color: "#3b82f6",
+            fontSize: 13,
+            fontWeight: 600,
+            textDecoration: "none",
+          }}
+        >
+          🛠 Task Builder — Create Custom Workflows
+        </Link>
+      </div>
 
       {/* Task selector + step navigator */}
       <TaskPanel
