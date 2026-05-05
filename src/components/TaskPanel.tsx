@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { taskTemplates, type TaskTemplate } from "@/lib/task-templates";
+import { type TaskTemplate } from "@/lib/task-templates";
 
 interface TaskPanelProps {
   currentTask: TaskTemplate | null;
@@ -71,8 +71,8 @@ export default function TaskPanel({
     return () => { cancelled = true; };
   }, [accessToken]);
 
-  // Merge: default templates first, then custom tasks
-  const allTasks: TaskTemplate[] = [...taskTemplates, ...customTasks];
+  // Only custom tasks (no default templates)
+  const allTasks: TaskTemplate[] = [...customTasks];
 
   const [duplicating, setDuplicating] = useState(false);
 
@@ -129,17 +129,8 @@ export default function TaskPanel({
             className="flex-1 min-w-0 bg-zinc-800 text-white text-sm px-2 py-1 rounded border border-zinc-700 focus:outline-none focus:border-blue-500"
           >
             <option value="">-- Free Ask --</option>
-            {taskTemplates.length > 0 && (
-              <optgroup label="Default Tasks">
-                {taskTemplates.map((task) => (
-                  <option key={task.id} value={task.id}>
-                    {task.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
             {customTasks.length > 0 && (
-              <optgroup label="My Custom Tasks">
+              <optgroup label="Task Builder">
                 {customTasks.map((task) => (
                   <option key={task.id} value={task.id}>
                     {task.name}
@@ -147,11 +138,6 @@ export default function TaskPanel({
                 ))}
               </optgroup>
             )}
-            {taskTemplates.length === 0 && customTasks.length === 0 && taskTemplates.map((task) => (
-              <option key={task.id} value={task.id}>
-                {task.name}
-              </option>
-            ))}
           </select>
         </div>
         {currentTask && (
