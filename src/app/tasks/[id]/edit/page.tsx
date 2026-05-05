@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { supabaseClient } from "@/lib/supabase-client";
+import { useAnonymousUser } from "@/hooks/useAnonymousUser";
 import TaskEditor from "@/components/TaskEditor";
 
 interface Step {
@@ -15,31 +15,19 @@ export default function EditTaskPage() {
   const router = useRouter();
   const params = useParams();
   const taskId = params.id as string;
+  const { accessToken, loading: authLoading } = useAnonymousUser();
 
-  const [accessToken, setAccessToken] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [taskName, setTaskName] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [taskSteps, setTaskSteps] = useState<Step[]>([]);
 
-  useEffect(() => {
-    const getSession = async () => {
-      const { data } = await supabaseClient.auth.getSession();
-      if (data.session?.access_token) {
-        setAccessToken(data.session.access_token);
-      }
-    };
-    getSession();
-  }, []);
-
-  useEffect(() => {
+  const fetchTask = useCallback(async () => {
     if (!accessToken || !taskId) return;
-    fetchTask();
-  }, [accessToken, taskId]);
-
-  const fetchTask = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -57,24 +45,30 @@ export default function EditTaskPage() {
           }))
         );
       } else {
-        alert("Task not found");
-        router.push("/tasks");
+        setError("Task not found");
       }
     } catch (e) {
       console.error("Fetch task error:", e);
-      alert("Failed to load task");
-      router.push("/tasks");
+      setError("Failed to load task");
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken, taskId]);
+
+  useEffect(() => {
+    if (!authLoading && accessToken) {
+      fetchTask();
+    }
+  }, [authLoading, accessToken, fetchTask]);
 
   const handleSave = async (taskData: {
     name: string;
     description: string;
     steps: Step[];
   }) => {
+    if (!accessToken) return;
     setSaving(true);
+    setError(null);
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: "PUT",
@@ -88,17 +82,17 @@ export default function EditTaskPage() {
         router.push("/tasks");
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to update task");
+        setError(data.error || "Failed to update task");
       }
     } catch (e) {
       console.error("Update task error:", e);
-      alert("Failed to update task. Please try again.");
+      setError("Failed to update task. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div
         style={{
@@ -111,7 +105,24 @@ export default function EditTaskPage() {
           justifyContent: "center",
         }}
       >
-        <div style={{ color: "#64748b" }}>Loading task...</div>
+        <div style={{ color: "#64748b" }}>
+          {authLoading ? "Loading authentication..." : "Loading task..."}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ minHeight: "100dvh", background: "#0a0f1a", color: "#e2e8f0", fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: "20px 16px" }}>
+          <button onClick={() => router.push("/tasks")} style={{ background: "transparent", border: "none", color: "#64748b", fontSize: 14, cursor: "pointer", padding: 0, marginBottom: 16 }}>
+            ← Back to Tasks
+          </button>
+          <div style={{ background: "#7f1d1d", border: "1px solid #dc2626", borderRadius: 8, padding: "12px 16px", color: "#fca5a5", fontSize: 13 }}>
+            ❌ {error}
+          </div>
+        </div>
       </div>
     );
   }

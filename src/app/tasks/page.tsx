@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { supabaseClient } from "@/lib/supabase-client";
+import { useAnonymousUser } from "@/hooks/useAnonymousUser";
 
 interface TaskStep {
   id: string;
@@ -21,27 +21,15 @@ interface TaskTemplate {
 }
 
 export default function TasksPage() {
+  const { accessToken, loading: authLoading } = useAnonymousUser();
   const [tasks, setTasks] = useState<TaskTemplate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [accessToken, setAccessToken] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const getSession = async () => {
-      const { data } = await supabaseClient.auth.getSession();
-      if (data.session?.access_token) {
-        setAccessToken(data.session.access_token);
-      }
-    };
-    getSession();
-  }, []);
-
-  useEffect(() => {
+  const fetchTasks = useCallback(async () => {
     if (!accessToken) return;
-    fetchTasks();
-  }, [accessToken]);
-
-  const fetchTasks = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/tasks", {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -49,13 +37,23 @@ export default function TasksPage() {
       if (res.ok) {
         const data = await res.json();
         setTasks(data.tasks || []);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Failed to load tasks");
       }
     } catch (e) {
       console.error("Failed to fetch tasks:", e);
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (!authLoading && accessToken) {
+      fetchTasks();
+    }
+  }, [authLoading, accessToken, fetchTasks]);
 
   const deleteTask = async (id: string) => {
     if (!confirm("Are you sure you want to delete this task?")) return;
@@ -129,13 +127,48 @@ export default function TasksPage() {
           </Link>
         </div>
 
-        {/* Loading */}
-        {loading && (
+        {/* Auth Loading */}
+        {authLoading && (
+          <div style={{ textAlign: "center", padding: 40, color: "#64748b" }}>Loading authentication...</div>
+        )}
+
+        {/* Tasks Loading */}
+        {!authLoading && loading && (
           <div style={{ textAlign: "center", padding: 40, color: "#64748b" }}>Loading tasks...</div>
         )}
 
+        {/* Error */}
+        {error && (
+          <div style={{
+            background: "#7f1d1d",
+            border: "1px solid #dc2626",
+            borderRadius: 8,
+            padding: "12px 16px",
+            marginBottom: 16,
+            color: "#fca5a5",
+            fontSize: 13,
+          }}>
+            ❌ {error}
+            <button
+              onClick={() => fetchTasks()}
+              style={{
+                marginLeft: 12,
+                background: "transparent",
+                border: "1px solid #fca5a5",
+                borderRadius: 4,
+                padding: "2px 8px",
+                color: "#fca5a5",
+                fontSize: 12,
+                cursor: "pointer",
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Empty state */}
-        {!loading && tasks.length === 0 && (
+        {!authLoading && !loading && !error && tasks.length === 0 && (
           <div
             style={{
               textAlign: "center",

@@ -1,31 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseClient } from "@/lib/supabase-client";
+import { useAnonymousUser } from "@/hooks/useAnonymousUser";
 import TaskEditor from "@/components/TaskEditor";
 
 export default function NewTaskPage() {
   const router = useRouter();
-  const [accessToken, setAccessToken] = useState("");
+  const { accessToken, loading: authLoading } = useAnonymousUser();
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const getSession = async () => {
-      const { data } = await supabaseClient.auth.getSession();
-      if (data.session?.access_token) {
-        setAccessToken(data.session.access_token);
-      }
-    };
-    getSession();
-  }, []);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSave = async (taskData: {
     name: string;
     description: string;
     steps: { title: string; instruction: string; successCriteria: string }[];
   }) => {
+    if (!accessToken) {
+      setError("Authentication not ready. Please wait and try again.");
+      return;
+    }
     setSaving(true);
+    setError(null);
     try {
       const res = await fetch("/api/tasks", {
         method: "POST",
@@ -39,11 +35,11 @@ export default function NewTaskPage() {
         router.push("/tasks");
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to create task");
+        setError(data.error || "Failed to create task");
       }
     } catch (e) {
       console.error("Create task error:", e);
-      alert("Failed to create task. Please try again.");
+      setError("Failed to create task. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -89,11 +85,40 @@ export default function NewTaskPage() {
           </p>
         </div>
 
-        <TaskEditor
-          onSave={handleSave}
-          onCancel={() => router.push("/tasks")}
-          saving={saving}
-        />
+        {error && (
+          <div style={{
+            background: "#7f1d1d",
+            border: "1px solid #dc2626",
+            borderRadius: 8,
+            padding: "12px 16px",
+            marginBottom: 16,
+            color: "#fca5a5",
+            fontSize: 13,
+          }}>
+            ❌ {error}
+          </div>
+        )}
+
+        {authLoading ? (
+          <p style={{ color: "#64748b", fontSize: 14 }}>Loading authentication...</p>
+        ) : !accessToken ? (
+          <div style={{
+            background: "#78350f",
+            border: "1px solid #d97706",
+            borderRadius: 8,
+            padding: "12px 16px",
+            color: "#fcd34d",
+            fontSize: 13,
+          }}>
+            ⚠️ Authentication failed. Please refresh the page.
+          </div>
+        ) : (
+          <TaskEditor
+            onSave={handleSave}
+            onCancel={() => router.push("/tasks")}
+            saving={saving}
+          />
+        )}
       </div>
     </div>
   );
