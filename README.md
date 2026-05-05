@@ -1,14 +1,14 @@
-# LightXR Copilot
+# Gaze
 
 A first-person AI task assistant prototype for lightweight XR glasses.
 
 ## What It Is
 
-LightXR Copilot explores a lightweight glasses-first interaction model. It uses a phone camera as first-person view input and provides visual understanding, voice interaction, task guidance, persistent memory, and AI-generated training reports.
+Gaze explores a lightweight glasses-first interaction model. It uses a phone camera as first-person view input and provides visual understanding, voice interaction, task guidance, persistent memory, and AI-generated training reports.
 
 ## Why It Matters
 
-Current XR headsets are heavy and expensive. LightXR Copilot demonstrates that a software-only prototype — running on a phone browser — can deliver meaningful first-person AI assistance for industrial training, assembly tasks, and guided procedures.
+Current XR headsets are heavy and expensive. Gaze demonstrates that a software-only prototype — running on a phone browser — can deliver meaningful first-person AI assistance for industrial training, assembly tasks, and guided procedures.
 
 ## Features
 
@@ -52,8 +52,8 @@ Start Training → Select Task → Capture Image → Ask Question (voice/text)
 
 1. Clone the repo:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/lightxr-copilot.git
-   cd lightxr-copilot
+    git clone https://github.com/YOUR_USERNAME/gaze-prototype.git
+    cd gaze-prototype
    ```
 
 2. Install dependencies:
