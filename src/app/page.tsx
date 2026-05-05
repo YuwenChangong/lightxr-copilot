@@ -122,6 +122,7 @@ export default function Home() {
         currentStepIndex={currentStepIndex}
         onTaskChange={setCurrentTask}
         onStepChange={setCurrentStepIndex}
+        accessToken={accessToken || undefined}
       />
 
       {/* Session control bar */}

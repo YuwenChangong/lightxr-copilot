@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { taskTemplates, type TaskTemplate } from "@/lib/task-templates";
 
 interface TaskPanelProps {
@@ -8,6 +8,35 @@ interface TaskPanelProps {
   currentStepIndex: number;
   onTaskChange: (task: TaskTemplate | null) => void;
   onStepChange: (index: number) => void;
+  accessToken?: string;
+}
+
+/** Convert a DB task (snake_case) to local TaskTemplate (camelCase) */
+function dbTaskToTemplate(dbTask: {
+  id: string;
+  name: string;
+  description: string | null;
+  task_steps: {
+    id: string;
+    step_order: number;
+    title: string;
+    instruction: string;
+    success_criteria: string;
+  }[];
+}): TaskTemplate {
+  return {
+    id: dbTask.id,
+    name: dbTask.name,
+    description: dbTask.description || "",
+    steps: (dbTask.task_steps || [])
+      .sort((a, b) => a.step_order - b.step_order)
+      .map((s, i) => ({
+        id: i + 1,
+        title: s.title,
+        instruction: s.instruction,
+        successCriteria: s.success_criteria,
+      })),
+  };
 }
 
 export default function TaskPanel({
@@ -15,8 +44,35 @@ export default function TaskPanel({
   currentStepIndex,
   onTaskChange,
   onStepChange,
+  accessToken,
 }: TaskPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const [customTasks, setCustomTasks] = useState<TaskTemplate[]>([]);
+
+  // Load custom tasks from API
+  useEffect(() => {
+    if (!accessToken) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/tasks", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          const converted = (data.tasks || []).map(dbTaskToTemplate);
+          setCustomTasks(converted);
+        }
+      } catch (e) {
+        console.error("Failed to load custom tasks:", e);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [accessToken]);
+
+  // Merge: default templates first, then custom tasks
+  const allTasks: TaskTemplate[] = [...taskTemplates, ...customTasks];
 
   const currentStep = currentTask?.steps[currentStepIndex];
 
@@ -26,17 +82,35 @@ export default function TaskPanel({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="text-xs text-zinc-500 shrink-0">Task:</span>
-          <select
+            <select
             value={currentTask?.id || ""}
             onChange={(e) => {
-              const task = taskTemplates.find((t) => t.id === e.target.value);
+              const task = allTasks.find((t) => t.id === e.target.value);
               onTaskChange(task || null);
               onStepChange(0);
             }}
             className="flex-1 min-w-0 bg-zinc-800 text-white text-sm px-2 py-1 rounded border border-zinc-700 focus:outline-none focus:border-blue-500"
           >
             <option value="">-- Free Ask --</option>
-            {taskTemplates.map((task) => (
+            {taskTemplates.length > 0 && (
+              <optgroup label="Default Tasks">
+                {taskTemplates.map((task) => (
+                  <option key={task.id} value={task.id}>
+                    {task.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {customTasks.length > 0 && (
+              <optgroup label="My Custom Tasks">
+                {customTasks.map((task) => (
+                  <option key={task.id} value={task.id}>
+                    {task.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {taskTemplates.length === 0 && customTasks.length === 0 && taskTemplates.map((task) => (
               <option key={task.id} value={task.id}>
                 {task.name}
               </option>
