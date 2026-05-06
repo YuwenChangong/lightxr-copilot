@@ -107,7 +107,7 @@ export default function TasksPage() {
               ← Back
             </Link>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: "#f1f5f9", margin: 0 }}>
-              Task Builder
+              Gaze Studio
             </h1>
           </div>
           <Link
@@ -123,7 +123,7 @@ export default function TasksPage() {
               textDecoration: "none",
             }}
           >
-            + Create Task
+            + Create Workflow
           </Link>
         </div>
 
@@ -183,7 +183,7 @@ export default function TasksPage() {
               No tasks yet
             </p>
             <p style={{ fontSize: 13, color: "#64748b", marginBottom: 24 }}>
-              Create your first training workflow to get started.
+              Create your first agent workflow to get started.
             </p>
             <Link
               href="/tasks/new"
@@ -199,7 +199,7 @@ export default function TasksPage() {
                 textDecoration: "none",
               }}
             >
-              + Create Your First Task
+              + Create Your First Workflow
             </Link>
           </div>
         )}

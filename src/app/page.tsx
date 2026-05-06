@@ -99,6 +99,28 @@ export default function Home() {
         </p>
       </div>
 
+      {/* Gaze OS entry points */}
+      <div className="px-3 py-1 flex gap-2">
+        <Link
+          href="/glass"
+          className="flex-1 flex flex-col items-center gap-1 py-3 bg-white rounded-2xl no-underline text-[#1c1c1e] text-[13px] font-semibold text-center active:bg-[#f2f2f7] transition-colors"
+          style={{ boxShadow: "0 0 0 1px var(--separator), 0 1px 3px rgba(0,0,0,0.04)" }}
+        >
+          <span className="text-lg">🎯</span>
+          Glass Mode
+          <span className="text-[11px] text-[#8e8e93] font-normal">Tap to Ask</span>
+        </Link>
+        <Link
+          href="/glass-os"
+          className="flex-1 flex flex-col items-center gap-1 py-3 bg-white rounded-2xl no-underline text-[#1c1c1e] text-[13px] font-semibold text-center active:bg-[#f2f2f7] transition-colors"
+          style={{ boxShadow: "0 0 0 1px var(--separator), 0 1px 3px rgba(0,0,0,0.04)" }}
+        >
+          <span className="text-lg">👓</span>
+          Gaze OS
+          <span className="text-[11px] text-[#8e8e93] font-normal">Launcher</span>
+        </Link>
+      </div>
+
       <CameraCapture onCapture={handleCapture} />
 
       {/* Ask panel — primary experience */}
