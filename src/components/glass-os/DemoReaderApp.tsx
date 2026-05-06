@@ -162,7 +162,7 @@ export function DemoReaderApp() {
 
       {/* Voice hints */}
       <div style={{ fontSize: 11, color: "#334155", textAlign: "center", marginTop: 8 }}>
-        🎤 "next page" · "previous page" · "summarize" · "font bigger"
+        🗣 下一页 · 上一页 · 总结 · 调大字体 · 返回
       </div>
     </div>
   );

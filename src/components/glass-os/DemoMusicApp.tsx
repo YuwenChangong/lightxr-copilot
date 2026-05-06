@@ -157,7 +157,7 @@ export function DemoMusicApp() {
       </div>
 
       <div style={{ fontSize: 11, color: "#334155", textAlign: "center" }}>
-        🎤 "play" · "pause" · "next"
+        🗣 播放 · 暂停 · 下一首 · 上一首 · 返回
       </div>
 
       <style>{`

@@ -107,7 +107,7 @@ export function DemoChatApp() {
 
       {/* Voice hints */}
       <div style={{ fontSize: 11, color: "#334155", textAlign: "center", marginTop: 10 }}>
-        🎤 "read latest" · "reply hello!" · "send" · "cancel"
+        🗣 读最新消息 · 回复你好 · 确认发送 · 取消 · 返回
       </div>
     </div>
   );

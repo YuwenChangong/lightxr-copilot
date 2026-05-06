@@ -126,15 +126,44 @@ function updateEntry(id: string, result: "ok" | "failed" | "blocked", error?: st
   updateLogResult(id, result, error);
 }
 
-// TTS utility
+// TTS utility — optimized with zh-CN voice preference
 let _utterance: SpeechSynthesisUtterance | null = null;
+let _zhVoice: SpeechSynthesisVoice | null = null;
+let _voicesLoaded = false;
 
-export function speak(text: string, lang = "en-US"): void {
+function loadVoices(): void {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  if (_voicesLoaded) return;
+  _voicesLoaded = true;
+
+  const pickVoice = () => {
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) return;
+    // Prefer zh-CN voices
+    _zhVoice =
+      voices.find((v) => v.lang === "zh-CN" && v.localService) ??
+      voices.find((v) => v.lang === "zh-CN") ??
+      voices.find((v) => v.lang.startsWith("zh")) ??
+      null;
+  };
+  pickVoice();
+  window.speechSynthesis.onvoiceschanged = pickVoice;
+}
+loadVoices();
+
+export function speak(text: string, lang = "zh-CN"): void {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   stop();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = lang;
-  u.rate = 1.0;
+  // Use zh-CN voice if available and requesting Chinese
+  if (lang.startsWith("zh") && _zhVoice) {
+    u.voice = _zhVoice;
+  }
+  // Slightly slower rate + lower pitch for clarity (especially on AR glasses)
+  u.rate = 0.95;
+  u.pitch = 1.05;
+  u.volume = 1.0;
   window.speechSynthesis.speak(u);
   _utterance = u;
 }

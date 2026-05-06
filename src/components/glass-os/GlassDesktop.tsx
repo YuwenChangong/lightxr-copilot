@@ -130,10 +130,13 @@ export function GlassDesktop() {
 
           {/* Voice Command */}
           <div style={{ marginTop: 16 }}>
-            <GlassVoiceCommand onFeedback={(msg) => {
-              setFeedback(msg);
-              setFeedbackKey((k) => k + 1);
-            }} />
+            <GlassVoiceCommand
+              onFeedback={(msg) => {
+                setFeedback(msg);
+                setFeedbackKey((k) => k + 1);
+              }}
+              currentApp={null}
+            />
           </div>
 
           {/* Quick actions hint */}

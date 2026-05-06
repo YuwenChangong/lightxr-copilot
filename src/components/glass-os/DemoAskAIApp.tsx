@@ -263,7 +263,7 @@ export function DemoAskAIApp() {
 
       {/* Voice hints */}
       <div style={{ fontSize: 11, color: "#334155", textAlign: "center", marginTop: "auto" }}>
-        🎤 "ask what is..." · "analyze" · "分析当前画面"
+        🗣 问什么是… · 分析 · 分析当前画面 · 返回
       </div>
     </div>
   );

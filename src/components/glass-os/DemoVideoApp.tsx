@@ -138,7 +138,7 @@ export function DemoVideoApp() {
       </div>
 
       <div style={{ fontSize: 11, color: "#334155", textAlign: "center" }}>
-        🎤 "play" · "pause" · "next"
+        🗣 播放 · 暂停 · 下一集 · 返回
       </div>
 
       <style>{`

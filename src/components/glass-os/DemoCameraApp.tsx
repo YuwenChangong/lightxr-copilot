@@ -296,7 +296,7 @@ export function DemoCameraApp() {
       )}
 
       <div style={{ fontSize: 11, color: "#334155", textAlign: "center" }}>
-        {cameraAvailable ? "Click 📸 to capture · 🔄 to flip camera" : "Click 📸 to upload a photo"}
+        � 拍照 · 返回
       </div>
     </div>
   );
