@@ -13,6 +13,7 @@ import { DemoChatApp } from "./DemoChatApp";
 import { DemoVideoApp } from "./DemoVideoApp";
 import { DemoMusicApp } from "./DemoMusicApp";
 import { DemoCameraApp } from "./DemoCameraApp";
+import { DemoAskAIApp } from "./DemoAskAIApp";
 
 export function GlassDesktop() {
   const gaze = useGazeNavigation();
@@ -61,13 +62,7 @@ export function GlassDesktop() {
       case "camera":
         return <DemoCameraApp />;
       case "ask":
-        return (
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
-            <span style={{ fontSize: 48 }}>🧠</span>
-            <span style={{ fontSize: 16, color: "#e2e8f0", fontWeight: 600 }}>Ask AI</span>
-            <span style={{ fontSize: 13, color: "#64748b" }}>Coming soon — ask anything via voice</span>
-          </div>
-        );
+        return <DemoAskAIApp />;
       case "settings":
         return (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>

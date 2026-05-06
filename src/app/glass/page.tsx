@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useAnonymousUser } from "@/hooks/useAnonymousUser";
 import TextToSpeechButton from "@/components/TextToSpeechButton";
+import VoiceInputButton from "@/components/VoiceInputButton";
 
 type GlassState = "idle" | "listening" | "capturing" | "analyzing" | "speaking" | "done";
 
@@ -15,6 +16,8 @@ export default function GlassPage() {
   const [error, setError] = useState<string | null>(null);
   const [privateMode, setPrivateMode] = useState(false);
   const [holdTimer, setHoldTimer] = useState<NodeJS.Timeout | null>(null);
+  const [cameraSupported, setCameraSupported] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -34,7 +37,7 @@ export default function GlassPage() {
           videoRef.current.srcObject = stream;
         }
       } catch {
-        // Camera not available - will use manual upload
+        setCameraSupported(false);
       }
     }
     initCamera();
@@ -43,31 +46,37 @@ export default function GlassPage() {
     };
   }, []);
 
-  const captureFrame = useCallback((): Blob | null => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.videoWidth === 0) return null;
+  const captureFrame = useCallback((): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!video || !canvas || video.videoWidth === 0) {
+        resolve(null);
+        return;
+      }
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(video, 0, 0);
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(null);
+        return;
+      }
+      ctx.drawImage(video, 0, 0);
 
-    let blob: Blob | null = null;
-    canvas.toBlob((b) => { blob = b; }, "image/jpeg", 0.85);
-    return blob;
+      canvas.toBlob((b) => { resolve(b); }, "image/jpeg", 0.85);
+    });
   }, []);
 
   const startVoiceRecognition = useCallback(() => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
-      setError("Speech recognition not supported in this browser.");
+      setError("此浏览器不支持语音识别，请使用文本输入。");
       return;
     }
 
     const recognition = new SR();
-    recognition.lang = "en-US";
+    recognition.lang = "zh-CN";
     recognition.interimResults = true;
     recognition.continuous = false;
 
@@ -96,10 +105,14 @@ export default function GlassPage() {
       }
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
       setState("idle");
       recognitionRef.current = null;
-      setError("Voice recognition failed. Try again.");
+      if (event.error === "not-allowed") {
+        setError("麦克风权限被拒绝，请允许麦克风访问。");
+      } else {
+        setError("语音识别失败，请重试或使用文本输入。");
+      }
     };
 
     recognition.start();
@@ -113,10 +126,10 @@ export default function GlassPage() {
     setImageUrl(null);
 
     // Capture frame
-    const blob = captureFrame();
+    const blob = await captureFrame();
     if (!blob) {
       setState("idle");
-      setError("Camera not available. Please allow camera access.");
+      setError("摄像头不可用，请使用下方按钮上传图片。");
       return;
     }
 
@@ -154,6 +167,47 @@ export default function GlassPage() {
     }
   }, [captureFrame, userId, accessToken, privateMode]);
 
+  // Handle file upload as fallback when camera is unavailable
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setState("analyzing");
+      setError(null);
+      setAnswer("");
+      const previewUrl = URL.createObjectURL(file);
+      setImageUrl(previewUrl);
+
+      try {
+        const fd = new FormData();
+        fd.append("image", file, "capture.jpg");
+        fd.append("question", question.trim() || "请描述这个画面，识别图中的物体，并告诉我下一步该做什么");
+        fd.append("mode", "quick");
+        if (userId) fd.append("user_id", userId);
+        if (privateMode) fd.append("private", "true");
+
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+          body: fd,
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || `Server error ${res.status}`);
+        }
+
+        const data = await res.json();
+        setAnswer(data.answer || "No answer received.");
+        setState("done");
+      } catch (err: any) {
+        setError(err.message || "Request failed.");
+        setState("idle");
+      }
+    },
+    [question, userId, accessToken, privateMode]
+  );
+
   // Tap = start voice
   const handleTap = useCallback(() => {
     if (state !== "idle" && state !== "done") return;
@@ -169,7 +223,7 @@ export default function GlassPage() {
   const handleHoldStart = useCallback(() => {
     const timer = setTimeout(() => {
       // Long press detected - show text input
-      const q = prompt("Type your question:");
+      const q = prompt("输入你的问题:");
       if (q?.trim()) {
         setQuestion(q.trim());
         handleAsk(q.trim());
@@ -194,12 +248,12 @@ export default function GlassPage() {
   }, []);
 
   const stateLabel = {
-    idle: "Tap to Ask",
-    listening: "Listening...",
-    capturing: "Capturing...",
-    analyzing: "Thinking...",
-    speaking: "Speaking...",
-    done: "Tap to Ask Again",
+    idle: "点击说话",
+    listening: "正在听...",
+    capturing: "拍摄中...",
+    analyzing: "思考中...",
+    speaking: "回答中...",
+    done: "点击再次提问",
   }[state];
 
   return (
@@ -406,6 +460,80 @@ export default function GlassPage() {
         </div>
       )}
 
+      {/* File upload fallback when camera is not supported */}
+      {!cameraSupported && state === "idle" && (
+        <div style={{ marginBottom: 12 }}>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              background: "rgba(59,130,246,0.15)",
+              border: "1px solid rgba(59,130,246,0.3)",
+              borderRadius: 12,
+              padding: "10px 24px",
+              color: "#3b82f6",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            📷 上传图片提问
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+          />
+        </div>
+      )}
+
+      {/* Text input for questions */}
+      <div style={{
+        display: "flex",
+        gap: 8,
+        maxWidth: 400,
+        width: "100%",
+        marginBottom: 12,
+      }}>
+        <input
+          type="text"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && question.trim()) {
+              if (cameraSupported) {
+                handleAsk(question.trim());
+              } else {
+                fileInputRef.current?.click();
+              }
+            }
+          }}
+          placeholder="输入问题..."
+          disabled={state !== "idle" && state !== "done"}
+          style={{
+            flex: 1,
+            background: "rgba(255,255,255,0.1)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: 12,
+            padding: "10px 16px",
+            color: "#fff",
+            fontSize: 14,
+            outline: "none",
+            opacity: (state !== "idle" && state !== "done") ? 0.5 : 1,
+          }}
+        />
+        <VoiceInputButton
+          onResult={(text) => setQuestion(text)}
+          lang="zh-CN"
+          disabled={state !== "idle" && state !== "done"}
+        />
+      </div>
+
       {/* Reset button when done */}
       {state === "done" && (
         <button
@@ -420,7 +548,7 @@ export default function GlassPage() {
             cursor: "pointer",
           }}
         >
-          New Question
+          新问题
         </button>
       )}
     </div>

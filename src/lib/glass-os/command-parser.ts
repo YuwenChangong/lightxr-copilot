@@ -86,6 +86,14 @@ export function parseVoiceCommand(text: string): AgentAction {
     return createAction("chat_reply", { text: replyMatch[1].trim() }, "voice");
   }
 
+  // Camera commands — must check BEFORE generic media
+  if (lower.includes("take photo") || lower.includes("capture") || lower.includes("拍照") || lower.includes("拍一张")) {
+    return createAction("camera_capture", undefined, "voice");
+  }
+  if (lower.includes("flip camera") || lower.includes("switch camera") || lower.includes("切换摄像头") || lower.includes("切换相机")) {
+    return createAction("camera_switch", undefined, "voice");
+  }
+
   // Media commands
   if (lower.includes("pause") || lower.includes("暂停")) {
     return createAction("media_pause", undefined, "voice");
@@ -93,11 +101,30 @@ export function parseVoiceCommand(text: string): AgentAction {
   if (lower.includes("resume") || lower.includes("play") || lower.includes("播放") || lower.includes("继续")) {
     return createAction("media_play", undefined, "voice");
   }
+  if (lower.includes("next episode") || lower.includes("下一集")) {
+    return createAction("media_next", undefined, "voice");
+  }
+  if (lower.includes("next song") || lower.includes("next track") || lower.includes("下一首")) {
+    return createAction("media_next", undefined, "voice");
+  }
   if (lower.includes("next") || lower.includes("下一")) {
     return createAction("media_next", undefined, "voice");
   }
   if (lower.includes("previous") || lower.includes("上一")) {
     return createAction("media_prev", undefined, "voice");
+  }
+
+  // Ask AI commands
+  if (lower.includes("analyze") || lower.includes("分析") || lower.includes("分析当前画面") || lower.includes("analyze this")) {
+    return createAction("ask_analyze", undefined, "voice");
+  }
+  const askMatch = lower.match(/(?:ask|提问|请问|问题)[\s:：]*(.+)/);
+  if (askMatch) {
+    return createAction("ask_query", { text: askMatch[1].trim() }, "voice");
+  }
+  // Fallback: if text starts with question words and no other match, treat as ask_query
+  if (/^(what|how|why|when|where|who|which|什么|怎么|为什么|哪里|谁)/.test(lower)) {
+    return createAction("ask_query", { text: lower }, "voice");
   }
 
   return createAction("unknown", { text }, "voice");

@@ -1,25 +1,80 @@
 @import "tailwindcss";
 
+/* ============================================
+   iOS Design System — LightXR Copilot
+   ============================================ */
+
 :root {
+  /* iOS System Colors */
   --background: #f2f2f7;
   --foreground: #1c1c1e;
   --card: #ffffff;
   --separator: rgba(60, 60, 67, 0.12);
   --label: #1c1c1e;
-  --secondary-label: #8e8e93;
-  --tertiary-label: #aeaeb2;
+  --secondary-label: #3c3c43cc;
+  --tertiary-label: #3c3c435c;
+  --quaternary-label: #3c3c432e;
+
+  /* iOS System Palette */
   --system-blue: #007aff;
   --system-green: #34c759;
   --system-red: #ff3b30;
   --system-orange: #ff9500;
+  --system-yellow: #ffcc00;
+  --system-purple: #af52de;
+  --system-pink: #ff2d55;
+  --system-teal: #5ac8fa;
+  --system-indigo: #5856d6;
+
+  /* iOS Grays */
   --system-gray: #8e8e93;
   --system-gray2: #aeaeb2;
   --system-gray3: #c7c7cc;
   --system-gray4: #d1d1d6;
   --system-gray5: #e5e5ea;
   --system-gray6: #f2f2f7;
+
+  /* iOS Fill Colors */
   --fill: rgba(120, 120, 128, 0.2);
   --fill2: rgba(120, 120, 128, 0.16);
+  --fill3: rgba(120, 120, 128, 0.12);
+  --fill4: rgba(120, 120, 128, 0.08);
+
+  /* iOS Material Effects */
+  --material-thin: rgba(255, 255, 255, 0.72);
+  --material-regular: rgba(255, 255, 255, 0.82);
+  --material-thick: rgba(255, 255, 255, 0.92);
+
+  /* Spacing Scale (iOS 4pt grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Corner Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Typography Scale */
+  --text-large-title: 34px;
+  --text-title-1: 28px;
+  --text-title-2: 22px;
+  --text-title-3: 20px;
+  --text-headline: 17px;
+  --text-body: 17px;
+  --text-callout: 16px;
+  --text-subhead: 15px;
+  --text-footnote: 13px;
+  --text-caption-1: 12px;
+  --text-caption-2: 11px;
 }
 
 @theme inline {
@@ -29,39 +84,303 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ============================================
+   Base Reset & Global Styles
+   ============================================ */
+
 * {
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
 html {
-  /* Prevent overscroll bounce */
   overscroll-behavior: none;
+  height: 100%;
+  height: -webkit-fill-available;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", var(--font-geist-sans), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Prevent iOS text size adjustment */
   -webkit-text-size-adjust: 100%;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  line-height: 1.47;
+  letter-spacing: -0.022em;
 }
 
-/* iOS-style scrollbar */
+/* iOS-style hidden scrollbar */
 ::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
-/* iOS-style focus ring */
+/* iOS-style focus handling */
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
 }
 
-/* Smooth transitions globally */
-button, a, input, select {
+/* iOS-style input appearance */
+input,
+textarea,
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-family: inherit;
+}
+
+/* Smooth transitions */
+button, a {
+  transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+button:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+/* ============================================
+   iOS Glass / Material Effects
+   ============================================ */
+
+.glass {
+  background: var(--material-regular);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.glass-thin {
+  background: var(--material-thin);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.glass-thick {
+  background: var(--material-thick);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* ============================================
+   iOS Card Styles
+   ============================================ */
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 0 0.5px var(--separator), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.card-elevated {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 0 0.5px var(--separator), 0 2px 10px rgba(0, 0, 0, 0.06), 0 0.5px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* iOS Grouped List Section */
+.list-section {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 0 0 0.5px var(--separator);
+}
+
+.list-item {
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.list-item + .list-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 52px;
+  right: 0;
+  height: 0.5px;
+  background: var(--separator);
+}
+
+.list-item:active {
+  background: var(--fill4);
+}
+
+/* ============================================
+   iOS Button Styles
+   ============================================ */
+
+.btn-primary {
+  background: var(--system-blue);
+  color: white;
+  font-size: var(--text-body);
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   transition: all 0.15s ease;
+}
+
+.btn-primary:active {
+  background: #0066d6;
+  transform: scale(0.97);
+}
+
+.btn-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: var(--fill);
+  color: var(--system-blue);
+  font-size: var(--text-subhead);
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:active {
+  background: var(--fill2);
+  transform: scale(0.97);
+}
+
+/* ============================================
+   iOS Typography Helpers
+   ============================================ */
+
+.text-large-title {
+  font-size: var(--text-large-title);
+  font-weight: 700;
+  letter-spacing: 0.012em;
+  line-height: 1.18;
+}
+
+.text-title-1 {
+  font-size: var(--text-title-1);
+  font-weight: 700;
+  letter-spacing: 0.007em;
+  line-height: 1.21;
+}
+
+.text-title-2 {
+  font-size: var(--text-title-2);
+  font-weight: 700;
+  letter-spacing: 0.007em;
+  line-height: 1.27;
+}
+
+.text-title-3 {
+  font-size: var(--text-title-3);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.text-headline {
+  font-size: var(--text-headline);
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.29;
+}
+
+.text-body {
+  font-size: var(--text-body);
+  font-weight: 400;
+  letter-spacing: -0.022em;
+  line-height: 1.29;
+}
+
+.text-callout {
+  font-size: var(--text-callout);
+  font-weight: 400;
+  line-height: 1.31;
+}
+
+.text-subhead {
+  font-size: var(--text-subhead);
+  font-weight: 400;
+  line-height: 1.33;
+}
+
+.text-footnote {
+  font-size: var(--text-footnote);
+  font-weight: 400;
+  letter-spacing: -0.08em;
+  line-height: 1.38;
+}
+
+.text-caption-1 {
+  font-size: var(--text-caption-1);
+  font-weight: 400;
+  line-height: 1.33;
+}
+
+.text-caption-2 {
+  font-size: var(--text-caption-2);
+  font-weight: 400;
+  letter-spacing: 0.07em;
+  line-height: 1.27;
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.25s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* ============================================
+   Safe Area (for iPhone notch)
+   ============================================ */
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }

@@ -47,6 +47,10 @@ export type ActionType =
   | "media_pause"
   | "media_next"
   | "media_prev"
+  | "camera_capture"
+  | "camera_switch"
+  | "ask_query"
+  | "ask_analyze"
   | "tts_speak"
   | "tts_stop"
   | "unknown";

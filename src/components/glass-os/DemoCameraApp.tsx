@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { registerHandler } from "@/lib/glass-os/action-executor";
+import type { AgentAction } from "@/lib/glass-os/gaze-types";
 
 export function DemoCameraApp() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -8,7 +10,11 @@ export function DemoCameraApp() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cameraAvailable, setCameraAvailable] = useState(true);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const captureRef = useRef<(() => void) | null>(null);
+  const toggleFacingRef = useRef<(() => void) | null>(null);
 
   const startCamera = useCallback(async () => {
     try {
@@ -27,19 +33,40 @@ export function DemoCameraApp() {
         videoRef.current.srcObject = mediaStream;
       }
     } catch (err: any) {
-      setError(err?.message ?? "Camera access denied or unavailable");
+      setCameraAvailable(false);
+      setError("摄像头不可用 — 请使用上传按钮选择图片");
     }
   }, [facingMode]);
 
-  // Auto-start camera on mount
+  // Register action handler for camera voice commands
   useEffect(() => {
-    startCamera();
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop());
+    const unsub = registerHandler("camera", (action: AgentAction) => {
+      switch (action.type) {
+        case "camera_capture":
+          captureRef.current?.();
+          break;
+        case "camera_switch":
+          toggleFacingRef.current?.();
+          break;
       }
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    });
+    return unsub;
+  }, []);
+
+    // Auto-start camera on mount
+    useEffect(() => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraAvailable(false);
+        setError("摄像头不可用 — 请使用上传按钮选择图片");
+        return;
+      }
+      startCamera();
+      return () => {
+        if (stream) {
+          stream.getTracks().forEach((t) => t.stop());
+        }
+      };
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const capture = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -57,6 +84,10 @@ export function DemoCameraApp() {
   const toggleFacing = useCallback(() => {
     setFacingMode((f) => (f === "user" ? "environment" : "user"));
   }, []);
+
+  // Keep refs in sync for voice command handler
+  captureRef.current = capture;
+  toggleFacingRef.current = toggleFacing;
 
   // Restart camera when facingMode changes
   useEffect(() => {
@@ -86,21 +117,38 @@ export function DemoCameraApp() {
               <br />
               On mobile, grant camera permission when prompted.
             </div>
-            <button
-              onClick={startCamera}
-              style={{
-                marginTop: 16,
-                background: "rgba(245,158,11,0.15)",
-                border: "1px solid rgba(245,158,11,0.3)",
-                borderRadius: 10,
-                padding: "8px 20px",
-                color: "#f59e0b",
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
-              🔄 Retry
-            </button>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 16 }}>
+              {cameraAvailable && (
+                <button
+                  onClick={startCamera}
+                  style={{
+                    background: "rgba(245,158,11,0.15)",
+                    border: "1px solid rgba(245,158,11,0.3)",
+                    borderRadius: 10,
+                    padding: "8px 20px",
+                    color: "#f59e0b",
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  🔄 Retry
+                </button>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  background: "rgba(59,130,246,0.15)",
+                  border: "1px solid rgba(59,130,246,0.3)",
+                  borderRadius: 10,
+                  padding: "8px 20px",
+                  color: "#3b82f6",
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                📷 Upload Photo
+              </button>
+            </div>
           </div>
         ) : (
           <video
@@ -170,6 +218,22 @@ export function DemoCameraApp() {
       {/* Hidden canvas for capture */}
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
+      {/* Hidden file input for upload fallback */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const url = URL.createObjectURL(file);
+          setPhoto(url);
+          setError(null);
+        }}
+      />
+
       {/* Controls */}
       <div style={{
         display: "flex",
@@ -177,12 +241,14 @@ export function DemoCameraApp() {
         justifyContent: "center",
         gap: 20,
       }}>
-        <button onClick={toggleFacing} style={ctrlBtn}>
-          🔄 Flip
-        </button>
+        {cameraAvailable && (
+          <button onClick={toggleFacing} style={ctrlBtn}>
+            🔄 Flip
+          </button>
+        )}
         <button
-          onClick={capture}
-          disabled={!!error}
+          onClick={cameraAvailable ? capture : () => fileInputRef.current?.click()}
+          disabled={false}
           style={{
             ...ctrlBtn,
             background: "rgba(245,158,11,0.15)",
@@ -203,6 +269,11 @@ export function DemoCameraApp() {
         <button onClick={() => setPhoto(null)} style={ctrlBtn}>
           ✕ Clear
         </button>
+        {!cameraAvailable && (
+          <button onClick={() => fileInputRef.current?.click()} style={ctrlBtn}>
+            📷 Upload
+          </button>
+        )}
       </div>
 
       {/* Photo gallery */}
@@ -225,7 +296,7 @@ export function DemoCameraApp() {
       )}
 
       <div style={{ fontSize: 11, color: "#334155", textAlign: "center" }}>
-        Click 📸 to capture · 🔄 to flip camera
+        {cameraAvailable ? "Click 📸 to capture · 🔄 to flip camera" : "Click 📸 to upload a photo"}
       </div>
     </div>
   );

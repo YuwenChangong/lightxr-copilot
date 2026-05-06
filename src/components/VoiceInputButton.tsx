@@ -8,22 +8,106 @@ interface VoiceInputButtonProps {
   disabled?: boolean;
 }
 
+/**
+ * Voice input using the browser's Web Speech API (SpeechRecognition).
+ * Supports Chinese (zh-CN) natively — no server-side transcription needed.
+ * Falls back to MediaRecorder + server API if Web Speech API is unavailable.
+ */
 export default function VoiceInputButton({
   onResult,
+  lang = "zh-CN",
   disabled = false,
 }: VoiceInputButtonProps) {
   const [status, setStatus] = useState<"idle" | "recording" | "processing" | "error">("idle");
+  const statusRef = useRef<"idle" | "recording" | "processing" | "error">("idle");
   const [supported, setSupported] = useState(true);
+  const recognitionRef = useRef<any>(null);
+
+  // MediaRecorder fallback refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
 
+  // Check for Web Speech API support
+  const hasSpeechAPI = typeof window !== "undefined" && (
+    "SpeechRecognition" in window || "webkitSpeechRecognition" in window
+  );
+
   useEffect(() => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (!hasSpeechAPI && (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)) {
       setSupported(false);
+    }
+  }, [hasSpeechAPI]);
+
+  // --- Web Speech API path ---
+  const startSpeechRecognition = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return false;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = lang;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 3;
+    recognition.continuous = false;
+
+    let finalTranscript = "";
+
+    recognition.onstart = () => {
+      setStatus("recording");
+      statusRef.current = "recording";
+    };
+
+    recognition.onresult = (event: any) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      // Use the latest interim result for display but only finalize on end
+      if (finalTranscript) {
+        onResult(finalTranscript.trim());
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error === "not-allowed") {
+        setStatus("error");
+        statusRef.current = "error";
+      } else if (event.error === "no-speech") {
+        setStatus("idle");
+        statusRef.current = "idle";
+      } else {
+        setStatus("error");
+        statusRef.current = "error";
+      }
+      setTimeout(() => { setStatus("idle"); statusRef.current = "idle"; }, 2000);
+    };
+
+    recognition.onend = () => {
+      if (finalTranscript.trim()) {
+        onResult(finalTranscript.trim());
+      }
+      if (statusRef.current === "recording") {
+        setStatus("idle");
+        statusRef.current = "idle";
+      }
+      recognitionRef.current = null;
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    return true;
+  }, [lang, onResult]);
+
+  const stopSpeechRecognition = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
     }
   }, []);
 
+  // --- MediaRecorder fallback path ---
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
@@ -34,7 +118,7 @@ export default function VoiceInputButton({
     }
   }, []);
 
-  const startRecording = useCallback(async () => {
+  const startRecordingFallback = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -59,12 +143,9 @@ export default function VoiceInputButton({
         const rawBlob = new Blob(chunksRef.current, { type: mimeType });
 
         try {
-          // Convert to WAV format (mimo API only supports mp3/flac/m4a/wav/ogg)
           const arrayBuffer = await rawBlob.arrayBuffer();
           const audioCtx = new AudioContext();
           const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
-          // Encode as WAV
           const wavBlob = audioBufferToWav(audioBuffer);
           audioCtx.close();
 
@@ -104,16 +185,27 @@ export default function VoiceInputButton({
   }, [onResult]);
 
   const toggleRecording = useCallback(() => {
-    if (status === "recording") {
-      stopRecording();
+    if (statusRef.current === "recording") {
+      if (hasSpeechAPI) {
+        stopSpeechRecognition();
+      } else {
+        stopRecording();
+      }
     } else if (status === "idle") {
-      startRecording();
+      if (hasSpeechAPI) {
+        startSpeechRecognition();
+      } else {
+        startRecordingFallback();
+      }
     }
-  }, [status, stopRecording, startRecording]);
+  }, [hasSpeechAPI, stopSpeechRecognition, startSpeechRecognition, stopRecording, startRecordingFallback]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
         mediaRecorderRef.current.stop();
       }
@@ -128,7 +220,7 @@ export default function VoiceInputButton({
       <button
         disabled
         className="p-2 text-zinc-600 cursor-not-allowed"
-        title="浏览器不支持录音"
+        title="浏览器不支持语音输入"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
@@ -184,7 +276,7 @@ export default function VoiceInputButton({
   );
 }
 
-// Convert AudioBuffer to WAV Blob
+// Convert AudioBuffer to WAV Blob (used by fallback only)
 function audioBufferToWav(buffer: AudioBuffer): Blob {
   const numChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
@@ -240,9 +332,10 @@ function writeString(view: DataView, offset: number, str: string) {
   }
 }
 
-// Extend Window type for MediaRecorder
+// Extend Window type for Web Speech API
 declare global {
   interface Window {
-    MediaRecorder: typeof MediaRecorder;
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
   }
 }

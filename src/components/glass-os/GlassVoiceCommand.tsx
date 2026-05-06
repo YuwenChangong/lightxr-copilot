@@ -22,16 +22,21 @@ export function GlassVoiceCommand({ onFeedback }: GlassVoiceCommandProps) {
     }
 
     const recognition = new SR();
-    recognition.lang = "en-US";
+    recognition.lang = "zh-CN";
     recognition.interimResults = true;
     recognition.continuous = false;
 
     setIsListening(true);
     setTranscript("");
 
+    let finalTranscript = "";
+
     recognition.onresult = (event: any) => {
       let text = "";
       for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
         text += event.results[i][0].transcript;
       }
       setTranscript(text);
@@ -39,8 +44,9 @@ export function GlassVoiceCommand({ onFeedback }: GlassVoiceCommandProps) {
 
     recognition.onend = () => {
       setIsListening(false);
-      if (transcript.trim()) {
-        processCommand(transcript.trim());
+      const result = finalTranscript.trim() || transcript.trim();
+      if (result) {
+        processCommand(result);
       }
       recognitionRef.current = null;
     };
@@ -57,7 +63,7 @@ export function GlassVoiceCommand({ onFeedback }: GlassVoiceCommandProps) {
   const processCommand = useCallback((text: string) => {
     const action = parseVoiceCommand(text);
     setLastCommand(text);
-    executeAction(action);
+    executeAction(action, "voice");
   }, []);
 
   const stopListening = useCallback(() => {

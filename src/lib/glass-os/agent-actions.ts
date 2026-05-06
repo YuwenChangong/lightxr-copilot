@@ -1,10 +1,17 @@
 // Agent Action Log — tracks action history for feedback display
 import type { AgentAction } from "./gaze-types";
 
+export type ActionResult = "pending" | "ok" | "failed" | "blocked";
+
 export interface ActionLogEntry {
   id: string;
   action: AgentAction;
   label: string;
+  timestamp: number;
+  rawCommand?: string;
+  targetApp?: string;
+  result: ActionResult;
+  error?: string;
 }
 
 let _log: ActionLogEntry[] = [];
@@ -15,15 +22,47 @@ function notify() {
   for (const fn of _listeners) fn([..._log]);
 }
 
-export function logAction(action: AgentAction, label: string): ActionLogEntry {
+export function logAction(
+  action: AgentAction,
+  label: string,
+  rawCommand?: string
+): ActionLogEntry {
   const entry: ActionLogEntry = {
     id: `action-${++_counter}`,
     action,
     label,
+    timestamp: Date.now(),
+    rawCommand,
+    targetApp: resolveTargetApp(action),
+    result: "pending",
   };
-  _log = [entry, ..._log].slice(0, 20); // keep last 20
+  _log = [entry, ..._log].slice(0, 30); // keep last 30
   notify();
   return entry;
+}
+
+export function updateLogResult(
+  entryId: string,
+  result: ActionResult,
+  error?: string
+): void {
+  const idx = _log.findIndex((e) => e.id === entryId);
+  if (idx >= 0) {
+    _log[idx] = { ..._log[idx], result, error };
+    notify();
+  }
+}
+
+function resolveTargetApp(action: AgentAction): string {
+  const t = action.type;
+  if (t.startsWith("reader_")) return "reader";
+  if (t.startsWith("chat_")) return "chat";
+  if (t.startsWith("media_")) return "media";
+  if (t.startsWith("camera_")) return "camera";
+  if (t.startsWith("ask_")) return "ask";
+  if (t.startsWith("tts_")) return "tts";
+  if (t === "open_app" || t === "close_app") return "system";
+  return "unknown";
 }
 
 export function getActionLog(): ActionLogEntry[] {
@@ -77,6 +116,14 @@ export function formatActionLabel(action: AgentAction): string {
       return "Next track";
     case "media_prev":
       return "Previous track";
+    case "camera_capture":
+      return "Photo captured 📸";
+    case "camera_switch":
+      return "Switching camera...";
+    case "ask_query":
+      return `Asking: "${action.payload?.text ?? ""}"`;
+    case "ask_analyze":
+      return "Analyzing current view...";
     case "tts_speak":
       return "Speaking...";
     case "tts_stop":

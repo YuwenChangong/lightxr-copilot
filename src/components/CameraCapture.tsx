@@ -15,62 +15,86 @@ export default function CameraCapture({ onCapture }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [capturedPreview, setCapturedPreview] = useState<string | null>(null);
   const [cameraSupported, setCameraSupported] = useState(true);
 
-  useEffect(() => {
-    let stream: MediaStream | null = null;
+  const initCamera = useCallback(async (prevStream?: MediaStream | null) => {
+    // Stop previous stream if any
+    if (prevStream) {
+      prevStream.getTracks().forEach((t) => t.stop());
+    }
 
-    async function startCamera() {
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
+      setError(null);
 
-        if (
-          typeof navigator === "undefined" ||
-          !navigator.mediaDevices ||
-          !navigator.mediaDevices.getUserMedia
-        ) {
-          setCameraSupported(false);
-          setLoading(false);
-          setError(
-            "Camera API is unavailable. This page must be served over HTTPS (or localhost) to access the camera. You can upload a photo instead."
-          );
-          return;
-        }
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+        setCameraSupported(false);
+        setLoading(false);
+        setError(
+          "当前页面无法直接访问摄像头（需要 HTTPS 或 localhost）。请使用下方按钮拍照或上传图片。"
+        );
+        return null;
+      }
 
-        stream = await navigator.mediaDevices.getUserMedia({
+    const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" },
           audio: false,
         });
+        streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
         setLoading(false);
-      } catch (err) {
-        setLoading(false);
-        if (err instanceof DOMException && err.name === "NotAllowedError") {
-          setError("Camera permission denied. Please allow camera access and refresh.");
-        } else if (err instanceof DOMException && err.name === "NotFoundError") {
-          setError("No camera found on this device.");
-        } else {
-          setError(
-            "Failed to access camera. Make sure you are on HTTPS or localhost. You can upload a photo instead."
-          );
-        }
-        setCameraSupported(false);
+        setCameraSupported(true);
+        return stream;
+    } catch (err) {
+      setLoading(false);
+      if (err instanceof DOMException && err.name === "NotAllowedError") {
+        setError("摄像头权限被拒绝。请点击下方按钮直接拍照或上传图片。");
+      } else if (err instanceof DOMException && err.name === "NotFoundError") {
+        setError("未检测到摄像头设备。请点击下方按钮上传图片。");
+      } else {
+        setError(
+          "无法直接访问摄像头（可能需要 HTTPS）。请点击下方按钮拍照或上传图片。"
+        );
       }
+      setCameraSupported(false);
+      return null;
     }
+  }, []);
 
-    startCamera();
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let cancelled = false;
+
+    (async () => {
+      stream = await initCamera();
+      if (cancelled && stream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
+    })();
 
     return () => {
+      cancelled = true;
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
     };
-  }, []);
+  }, [initCamera]);
+
+  const handleRetryCamera = useCallback(async () => {
+    setCameraSupported(true);
+    setError(null);
+    await initCamera(streamRef.current);
+  }, [initCamera]);
 
   // Compress image to reduce size for upload
   const compressImage = useCallback((blob: Blob): Promise<Blob> => {

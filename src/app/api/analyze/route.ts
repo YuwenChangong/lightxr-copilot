@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase-server";
+import { supabaseServer, supabaseServerConfigured, isDemoMode } from "@/lib/supabase-server";
 import { getAuthUserFromRequest } from "@/lib/get-auth-user";
 
 // Allow streaming responses up to 30 seconds
@@ -8,9 +8,31 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   try {
     // Authenticate user
-    const user = await getAuthUserFromRequest(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    let user: { id: string } | null = null;
+    let isAnonymous = false;
+    if (supabaseServerConfigured) {
+      user = await getAuthUserFromRequest(req);
+      if (!user) {
+        // Auth failed even though Supabase is configured.
+        // Allow analysis as anonymous (skip DB storage) instead of blocking.
+        user = { id: "anonymous" };
+        isAnonymous = true;
+      }
+    } else if (isDemoMode) {
+      // Demo mode (dev or ALLOW_UNAUTHENTICATED_DEMO=true):
+      // allow analysis without auth, but DB storage will be skipped
+      user = { id: "anonymous" };
+      isAnonymous = true;
+    } else {
+      // Production without Supabase: refuse to protect data integrity
+      return NextResponse.json(
+        {
+          error:
+            "Server misconfiguration: Supabase is not configured. " +
+            "Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+        },
+        { status: 503 }
+      );
     }
 
     const formData = await req.formData();
@@ -150,9 +172,9 @@ ${image ? "1. 识别图中的物体、工具、零件、设备\n2. 判断用户�
       }
     }
 
-    // Step 2: Upload image to Supabase Storage (only if image provided)
+    // Step 2: Upload image to Supabase Storage (only if image provided and user is authenticated)
     let imageUrl: string | null = null;
-    if (imageBuffer) {
+    if (imageBuffer && !isAnonymous) {
       try {
         const fileExt = image!.type.split("/")[1] || "jpg";
         const fileName = `${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
@@ -178,9 +200,11 @@ ${image ? "1. 识别图中的物体、工具、零件、设备\n2. 判断用户�
       }
     }
 
-    // Step 3: Insert capture record into database
+    // Step 3: Insert capture record into database (only if authenticated)
     let captureRecord = null;
-    try {
+    if (isAnonymous) {
+      // Skip DB operations for anonymous/unauthenticated users
+    } else try {
         const { data, error: insertError } = await supabaseServer
           .from("captures")
            .insert({
@@ -208,6 +232,7 @@ ${image ? "1. 识别图中的物体、工具、零件、设备\n2. 判断用户�
     return NextResponse.json({
       answer,
       capture: captureRecord,
+      anonymous: isAnonymous || undefined,
       debug: process.env.NODE_ENV === "development" ? { aiError, hasImage: !!image, imageSize: image?.size } : undefined,
     });
   } catch (error) {

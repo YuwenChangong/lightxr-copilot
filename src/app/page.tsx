@@ -20,7 +20,7 @@ export default function Home() {
   const [currentTask, setCurrentTask] = useState<TaskTemplate | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
-  // Session state (Phase 8)
+  // Session state
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionReport, setSessionReport] = useState<string | null>(null);
@@ -89,140 +89,194 @@ export default function Home() {
   }, [sessionId, sessionLoading, accessToken]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f2f2f7] text-[#1c1c1e]">
+    <div className="flex flex-col min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <Header />
 
-      {/* Subtitle */}
-      <div className="px-4 pt-3 pb-1">
-        <p className="text-[13px] text-[#8e8e93] text-center">
-          Gaze OS 早期 Web 原型 — 第一视角 AI 问答
-        </p>
-      </div>
+      <main className="flex-1 max-w-screen-sm mx-auto w-full px-4 pb-8">
+        {/* Hero section */}
+        <section className="pt-5 pb-4 animate-fade-in">
+          <h2 className="text-title-1 text-[var(--label)] mb-1">LightXR Copilot</h2>
+          <p className="text-subhead text-[var(--secondary-label)]">
+            第一视角 AI 问答助手
+          </p>
+        </section>
 
-      {/* Gaze OS entry points */}
-      <div className="px-3 py-1 flex gap-2">
-        <Link
-          href="/glass"
-          className="flex-1 flex flex-col items-center gap-1 py-3 bg-white rounded-2xl no-underline text-[#1c1c1e] text-[13px] font-semibold text-center active:bg-[#f2f2f7] transition-colors"
-          style={{ boxShadow: "0 0 0 1px var(--separator), 0 1px 3px rgba(0,0,0,0.04)" }}
-        >
-          <span className="text-lg">🎯</span>
-          Glass Mode
-          <span className="text-[11px] text-[#8e8e93] font-normal">Tap to Ask</span>
-        </Link>
-        <Link
-          href="/glass-os"
-          className="flex-1 flex flex-col items-center gap-1 py-3 bg-white rounded-2xl no-underline text-[#1c1c1e] text-[13px] font-semibold text-center active:bg-[#f2f2f7] transition-colors"
-          style={{ boxShadow: "0 0 0 1px var(--separator), 0 1px 3px rgba(0,0,0,0.04)" }}
-        >
-          <span className="text-lg">👓</span>
-          Gaze OS
-          <span className="text-[11px] text-[#8e8e93] font-normal">Launcher</span>
-        </Link>
-      </div>
-
-      <CameraCapture onCapture={handleCapture} />
-
-      {/* Ask panel — primary experience */}
-      <AskPanel
-        captureResult={captureResult}
-        onAnswered={() => setRefreshKey((n) => n + 1)}
-        currentTask={currentTask}
-        currentStepIndex={currentStepIndex}
-        sessionId={sessionId}
-        accessToken={accessToken}
-      />
-
-      {/* Capture history */}
-      <div className="px-4 py-2 flex-1">
-        <CaptureHistory refreshKey={refreshKey} accessToken={accessToken} />
-      </div>
-
-      {/* Divider */}
-      <div className="px-4 py-3">
-        <div className="border-t border-[var(--separator)]" />
-      </div>
-
-      {/* Gaze Studio — Advanced section */}
-      <div className="px-4 pb-2">
-        <h2 className="text-[13px] font-semibold text-[#8e8e93] uppercase tracking-wider mb-2">
-          Advanced
-        </h2>
-
-        <Link
-          href="/tasks"
-          className="flex items-center justify-center gap-2 bg-white rounded-xl py-3 text-[15px] font-semibold text-[#007aff] no-underline active:bg-[#f2f2f7] transition-colors mb-3"
-          style={{ boxShadow: "0 0 0 1px var(--separator), 0 1px 3px rgba(0,0,0,0.04)" }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-          </svg>
-          Gaze Studio — Workflow Builder
-        </Link>
-
-        {/* Task selector + step navigator */}
-        <TaskPanel
-          currentTask={currentTask}
-          currentStepIndex={currentStepIndex}
-          onTaskChange={setCurrentTask}
-          onStepChange={setCurrentStepIndex}
-          accessToken={accessToken || undefined}
-        />
-
-        {/* Session control bar */}
-        <div className="py-2">
-          {!sessionId && !sessionReport ? (
-            <button
-              onClick={handleStartSession}
-              disabled={sessionLoading}
-              className="w-full px-4 py-2.5 bg-[#34c759] text-white text-[15px] font-semibold rounded-xl active:bg-[#30b350] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              style={{ boxShadow: "0 1px 3px rgba(52,199,89,0.3)" }}
+        {/* Quick Actions — iOS style grid */}
+        <section className="mb-5 animate-fade-in" style={{ animationDelay: "0.05s" }}>
+          <p className="text-footnote text-[var(--tertiary-label)] font-semibold uppercase tracking-wider mb-2 px-1">
+            快速入口
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              href="/glass"
+              className="card-elevated flex flex-col items-center gap-2 py-5 px-3 no-underline text-[var(--label)] active:bg-[var(--fill4)] transition-all"
             >
-              {sessionLoading ? "创建中..." : "▶ Start Guided Training"}
-            </button>
-          ) : sessionId ? (
-            <div className="flex items-center gap-2">
-              <div className="flex-1 bg-[#34c759]/10 border border-[#34c759]/20 rounded-xl px-3 py-2.5 text-sm text-[#34c759] font-medium">
-                Training in progress... {sessionId.slice(0, 8)}
+              <div className="w-11 h-11 rounded-[var(--radius-lg)] bg-[#007aff]/10 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#007aff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
               </div>
-              <button
-                onClick={handleCompleteSession}
-                disabled={sessionLoading}
-                className="px-4 py-2.5 bg-[#ff3b30] text-white text-sm font-semibold rounded-xl active:bg-[#e0342b] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
-                style={{ boxShadow: "0 1px 3px rgba(255,59,48,0.3)" }}
-              >
-                {sessionLoading ? "Generating..." : "⏹ End"}
-              </button>
-            </div>
-          ) : null}
-          {sessionError && (
-            <p className="text-[#ff3b30] text-xs mt-1.5 font-medium">{sessionError}</p>
-          )}
-        </div>
-
-        {/* Training report */}
-        {sessionReport && (
-          <div className="mb-3 p-4 bg-white rounded-2xl" style={{ boxShadow: "0 0 0 1px var(--separator), 0 1px 3px rgba(0,0,0,0.04)" }}>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-[15px] font-semibold text-[#1c1c1e]">Training Report</h3>
-              <button
-                onClick={() => setSessionReport(null)}
-                className="text-[#8e8e93] active:text-[#636366] text-xs font-medium"
-              >
-                关闭
-              </button>
-            </div>
-            <div className="text-sm text-[#3a3a3c] leading-relaxed whitespace-pre-wrap">
-              {sessionReport}
-            </div>
+              <span className="text-subhead font-semibold">Glass Mode</span>
+              <span className="text-caption-1 text-[var(--tertiary-label)]">Tap to Ask</span>
+            </Link>
+            <Link
+              href="/glass-os"
+              className="card-elevated flex flex-col items-center gap-2 py-5 px-3 no-underline text-[var(--label)] active:bg-[var(--fill4)] transition-all"
+            >
+              <div className="w-11 h-11 rounded-[var(--radius-lg)] bg-[#5856d6]/10 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5856d6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2"/>
+                  <path d="M8 21h8M12 17v4"/>
+                </svg>
+              </div>
+              <span className="text-subhead font-semibold">Gaze OS</span>
+              <span className="text-caption-1 text-[var(--tertiary-label)]">Launcher</span>
+            </Link>
           </div>
-        )}
-      </div>
+        </section>
 
-      {/* Privacy notice */}
-      <p className="px-4 pb-4 text-[11px] text-[#aeaeb2] leading-relaxed text-center">
-        图片只会在你点击 Ask 后上传。请勿上传敏感内容。
-      </p>
+        {/* Camera Section */}
+        <section className="mb-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          <p className="text-footnote text-[var(--tertiary-label)] font-semibold uppercase tracking-wider mb-2 px-1">
+            拍摄
+          </p>
+          <div className="card-elevated overflow-hidden">
+            <CameraCapture onCapture={handleCapture} />
+          </div>
+        </section>
+
+        {/* Ask Panel */}
+        <section className="mb-4 animate-fade-in" style={{ animationDelay: "0.15s" }}>
+          <AskPanel
+            captureResult={captureResult}
+            onAnswered={() => setRefreshKey((n) => n + 1)}
+            currentTask={currentTask}
+            currentStepIndex={currentStepIndex}
+            sessionId={sessionId}
+            accessToken={accessToken}
+          />
+        </section>
+
+        {/* Recent Captures */}
+        <section className="mb-4 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+          <CaptureHistory refreshKey={refreshKey} accessToken={accessToken} />
+        </section>
+
+        {/* Advanced Section */}
+        <section className="mb-4 animate-fade-in" style={{ animationDelay: "0.25s" }}>
+          <p className="text-footnote text-[var(--tertiary-label)] font-semibold uppercase tracking-wider mb-2 px-1">
+            Advanced
+          </p>
+
+          {/* Workflow Builder Link */}
+          <Link
+            href="/tasks"
+            className="card list-item no-underline text-[var(--label)] mb-3 active:bg-[var(--fill4)]"
+          >
+            <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-[#ff9500]/10 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff9500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-subhead font-semibold truncate">Workflow Builder</p>
+              <p className="text-caption-1 text-[var(--tertiary-label)]">创建和管理工作流</p>
+            </div>
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none" className="text-[var(--system-gray3)] flex-shrink-0">
+              <path d="M1 1L7 7L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </Link>
+
+          {/* Task Panel */}
+          <div className="card p-4 mb-3">
+            <TaskPanel
+              currentTask={currentTask}
+              currentStepIndex={currentStepIndex}
+              onTaskChange={setCurrentTask}
+              onStepChange={setCurrentStepIndex}
+              accessToken={accessToken || undefined}
+            />
+          </div>
+
+          {/* Session Control */}
+          <div className="card p-4">
+            {!sessionId && !sessionReport ? (
+              <button
+                onClick={handleStartSession}
+                disabled={sessionLoading}
+                className="btn-primary w-full"
+                style={{ background: "var(--system-green)" }}
+              >
+                {sessionLoading ? (
+                  <>
+                    <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="12" cy="12" r="10" opacity="0.3"/>
+                      <path d="M12 2a10 10 0 0 1 10 10"/>
+                    </svg>
+                    创建中...
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="5,3 19,12 5,21"/>
+                    </svg>
+                    开始引导训练
+                  </>
+                )}
+              </button>
+            ) : sessionId ? (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 flex items-center gap-2 bg-[var(--system-green)]/10 rounded-[var(--radius-md)] px-3 py-2.5">
+                  <div className="w-2 h-2 rounded-full bg-[var(--system-green)] animate-pulse" />
+                  <span className="text-subhead text-[var(--system-green)] font-medium">
+                    训练中 {sessionId.slice(0, 8)}
+                  </span>
+                </div>
+                <button
+                  onClick={handleCompleteSession}
+                  disabled={sessionLoading}
+                  className="btn-primary flex-shrink-0"
+                  style={{ background: "var(--system-red)", padding: "10px 16px" }}
+                >
+                  {sessionLoading ? "生成中..." : "结束"}
+                </button>
+              </div>
+            ) : null}
+            {sessionError && (
+              <p className="text-caption-1 mt-2 font-medium" style={{ color: "var(--system-red)" }}>
+                {sessionError}
+              </p>
+            )}
+          </div>
+
+          {/* Training Report */}
+          {sessionReport && (
+            <div className="card-elevated p-4 mt-3 animate-slide-up">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-headline text-[var(--label)]">训练报告</h3>
+                <button
+                  onClick={() => setSessionReport(null)}
+                  className="btn-secondary"
+                  style={{ padding: "6px 12px", fontSize: "13px" }}
+                >
+                  关闭
+                </button>
+              </div>
+              <div className="text-subhead text-[var(--secondary-label)] leading-relaxed whitespace-pre-wrap">
+                {sessionReport}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Footer */}
+        <footer className="pt-2 pb-4 text-center animate-fade-in" style={{ animationDelay: "0.3s" }}>
+          <p className="text-caption-2 text-[var(--system-gray2)]">
+            图片仅在点击 Ask 后上传 · 请勿上传敏感内容
+          </p>
+        </footer>
+      </main>
     </div>
   );
 }
